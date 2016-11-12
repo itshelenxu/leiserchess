@@ -496,10 +496,10 @@ void low_level_make_move(position_t *old, position_t *p, move_t mv) {
           if (from_sq == p->ploc[from_color].squares[i]) {
             // Second, get the index of the to-pawn.
             for (int j = 0; j < p->ploc[to_color].pawns_count; ++j) {
-              if (to_sq == p->loc[to_color].squares[j]) {
-                square_t temp = p->ploc[from_color][i];
-                p->ploc[from_color][i] = p->ploc[to_color][j];
-                p->ploc[to_color][j] = temp;
+              if (to_sq == p->ploc[to_color].squares[j]) {
+                square_t temp = p->ploc[from_color].squares[i];
+                p->ploc[from_color].squares[i] = p->ploc[to_color].squares[j];
+                p->ploc[to_color].squares[j] = temp;
                 break;
               }
             }
@@ -584,8 +584,8 @@ victims_t make_move(position_t *old, position_t *p, move_t mv) {
     if (ptype_of(victim_piece) == PAWN) {
       color_t color = color_of(victim_piece);
       for (int i = 0; i < p->ploc[color].pawns_count; ++i) {
-        if (victim_piece == p->ploc[color][i]) {
-          p->ploc[color][i] = p->ploc[color][p->ploc[color].pawns_count - 1];
+        if (victim_piece == p->ploc[color].squares[i]) {
+          p->ploc[color].squares[i] = p->ploc[color].squares[p->ploc[color].pawns_count - 1];
           p->ploc[color].pawns_count--;
         }
       }
@@ -686,8 +686,8 @@ static uint64_t perft_search(position_t *p, int depth, int ply) {
       if (ptype_of(victim_piece) == PAWN) {
         color_t color = color_of(victim_piece);
         for (int i = 0; i < p->ploc[color].pawns_count; ++i) {
-          if (victim_piece == p->ploc[color][i]) {
-            p->ploc[color][i] = p->ploc[color][p->ploc[color].pawns_count - 1];
+          if (victim_piece == p->ploc[color].squares[i]) {
+            p->ploc[color].squares[i] = p->ploc[color].squares[p->ploc[color].pawns_count - 1];
             p->ploc[color].pawns_count--;
           }
         }

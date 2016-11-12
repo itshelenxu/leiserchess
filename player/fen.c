@@ -334,8 +334,8 @@ int fen_to_pos(position_t *p, char *fen) {
   p->history = &dmy2;           // history
 
   // Pawn counts
-  p->ploc[WHITE].pawns_count = 0
-  p->ploc[BLACK].pawns_count = 0
+  p->ploc[WHITE].pawns_count = 0;
+  p->ploc[BLACK].pawns_count = 0;
 
   if (fen[0] == '\0') {  // Empty FEN => use starting position
     fen = "ss3nw3/3nw4/2nw1nw3/1nw3SE1SE/nw1nw3SE1/3SE1SE2/4SE3/3SE3NN W";
@@ -364,11 +364,11 @@ int fen_to_pos(position_t *p, char *fen) {
       if (typ == KING) {
         Kings[color_of(x)]++;
         p->kloc[color_of(x)] = sq;
-      } else if (type == PAWN) {
+      } else if (typ == PAWN) {
         // Caution: assumes that the number of pawns per color never exceeds 8!
-        pawns_t* pawns = *(ploc[color_of(x)]);
-        (*pawns)[pawns->length]++;
-        ++pawns->length;
+        pawns_t* pawns = &(p->ploc[color_of(x)]);
+        pawns->squares[pawns->pawns_count]++;
+        ++pawns->pawns_count;
       }
     }
   }
