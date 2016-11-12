@@ -293,61 +293,94 @@ score_t eval(position_t *p, bool verbose) {
   ev_score_t bonus;
   char buf[MAX_CHARS_IN_MOVE];
 
-  for (fil_t f = 0; f < BOARD_WIDTH; f++) {
-    for (rnk_t r = 0; r < BOARD_WIDTH; r++) {
-      square_t sq = square_of(f, r);
-      piece_t x = p->board[sq];
-      color_t c = color_of(x);
-      if (verbose) {
-        square_to_str(sq, buf, MAX_CHARS_IN_MOVE);
+  if (!verbose) {
+    for (int c = 0; c < 2; ++c) {
+
+      // Pawn heuristics
+      for (int i = 0; i < p->ploc[c].pawns_count; ++i) {
+        fil_t f = fil_of(p->ploc[c].squares[i]);
+        rnk_t r = rnk_of(p->ploc[c].squares[i]);
+
+        // MATERIAL heuristic: Bonus for each Pawn
+        score[c] += PAWN_EV_VALUE;
+
+        // PBETWEEN heuristic
+        score[c] += pbetween(p, f, r);
+
+        // PCENTRAL heuristic
+        score[c] += pcentral(f, r);
       }
 
-      switch (ptype_of(x)) {
-        case EMPTY:
-          break;
-        case PAWN:
-          // MATERIAL heuristic: Bonus for each Pawn
-          bonus = PAWN_EV_VALUE;
-          if (verbose) {
-            printf("MATERIAL bonus %d for %s Pawn on %s\n", bonus, color_to_str(c), buf);
-          }
-          score[c] += bonus;
+      // King heuristics
+      fil_t f = fil_of(p->kloc[c]);
+      rnk_t r = rnk_of(p->kloc[c]);
 
-          // PBETWEEN heuristic
-          bonus = pbetween(p, f, r);
-          if (verbose) {
-            printf("PBETWEEN bonus %d for %s Pawn on %s\n", bonus, color_to_str(c), buf);
-          }
-          score[c] += bonus;
+      // KFACE heuristic
+      score[c] += kface(p, f, r);
 
-          // PCENTRAL heuristic
-          bonus = pcentral(f, r);
-          if (verbose) {
-            printf("PCENTRAL bonus %d for %s Pawn on %s\n", bonus, color_to_str(c), buf);
-          }
-          score[c] += bonus;
-          break;
+      // KAGGRESSIVE heuristic
+      score[c] += kaggressive(p, f, r);
+    }
 
-        case KING:
-          // KFACE heuristic
-          bonus = kface(p, f, r);
-          if (verbose) {
-            printf("KFACE bonus %d for %s King on %s\n", bonus,
-                   color_to_str(c), buf);
-          }
-          score[c] += bonus;
+  } else {
+    // Verbose output
 
-          // KAGGRESSIVE heuristic
-          bonus = kaggressive(p, f, r);
-          if (verbose) {
-            printf("KAGGRESSIVE bonus %d for %s King on %s\n", bonus, color_to_str(c), buf);
-          }
-          score[c] += bonus;
-          break;
-        case INVALID:
-          break;
-        default:
-          tbassert(false, "Jose says: no way!\n");   // No way, Jose!
+    for (fil_t f = 0; f < BOARD_WIDTH; f++) {
+      for (rnk_t r = 0; r < BOARD_WIDTH; r++) {
+        square_t sq = square_of(f, r);
+        piece_t x = p->board[sq];
+        color_t c = color_of(x);
+        if (verbose) {
+          square_to_str(sq, buf, MAX_CHARS_IN_MOVE);
+        }
+
+        switch (ptype_of(x)) {
+          case EMPTY:
+            break;
+          case PAWN:
+            // MATERIAL heuristic: Bonus for each Pawn
+            bonus = PAWN_EV_VALUE;
+            if (verbose) {
+              printf("MATERIAL bonus %d for %s Pawn on %s\n", bonus, color_to_str(c), buf);
+            }
+            // score[c] += bonus;
+
+            // PBETWEEN heuristic
+            bonus = pbetween(p, f, r);
+            if (verbose) {
+              printf("PBETWEEN bonus %d for %s Pawn on %s\n", bonus, color_to_str(c), buf);
+            }
+            // score[c] += bonus;
+
+            // PCENTRAL heuristic
+            bonus = pcentral(f, r);
+            if (verbose) {
+              printf("PCENTRAL bonus %d for %s Pawn on %s\n", bonus, color_to_str(c), buf);
+            }
+            // score[c] += bonus;
+            break;
+
+          case KING:
+            // KFACE heuristic
+            bonus = kface(p, f, r);
+            if (verbose) {
+              printf("KFACE bonus %d for %s King on %s\n", bonus,
+                     color_to_str(c), buf);
+            }
+            // score[c] += bonus;
+
+            // KAGGRESSIVE heuristic
+            bonus = kaggressive(p, f, r);
+            if (verbose) {
+              printf("KAGGRESSIVE bonus %d for %s King on %s\n", bonus, color_to_str(c), buf);
+            }
+            // score[c] += bonus;
+            break;
+          case INVALID:
+            break;
+          default:
+            tbassert(false, "Jose says: no way!\n");   // No way, Jose!
+        }
       }
     }
   }
