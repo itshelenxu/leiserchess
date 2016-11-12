@@ -128,6 +128,13 @@ typedef struct victims_t {
   piece_t zapped[13];
 } victims_t;
 
+// Keep track of a player's pawns (max 8).
+#define MAX_PAWNS 8
+typedef struct pawns_t {
+  int pawns_count;
+  square_t squares[8];
+} pawns_t;
+
 // returned by make move in illegal situation
 #define KO_ZAPPED -1
 // returned by make move in ko situation
@@ -151,6 +158,7 @@ typedef struct position {
   move_t       last_move;        // move that led to this position
   victims_t    victims;          // pieces destroyed by shooter
   square_t     kloc[2];          // location of kings
+  pawns_t      ploc[2];          // locations of pawns
 } position_t;
 
 // -----------------------------------------------------------------------------
