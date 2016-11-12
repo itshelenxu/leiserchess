@@ -293,6 +293,46 @@ score_t eval(position_t *p, bool verbose) {
   ev_score_t bonus;
   char buf[MAX_CHARS_IN_MOVE];
 
+  // printf("number of white pawns: %d\n", p->ploc[WHITE].pawns_count);
+  // for (int i = 0; i < p->ploc[WHITE].pawns_count; ++i) {
+  //   square_t square = p->ploc[WHITE].squares[i];
+  //   printf("(%d, %d) ", fil_of(square), rnk_of(square));
+  // }
+  // printf("\n");
+
+  // check that the white pawns are in the correct positions
+  for (fil_t f = 0; f < BOARD_WIDTH; ++f) {
+    for (rnk_t r = 0; r < BOARD_WIDTH; ++r) {
+      square_t sq = square_of(f, r);
+      piece_t x = p->board[sq];
+      color_t c = color_of(x);
+      square_to_str(sq, buf, MAX_CHARS_IN_MOVE);
+
+      if (ptype_of(x) == PAWN && color_of(x) == WHITE) {
+        bool exists = false;
+
+        for (int i = 0; i < p->ploc[WHITE].pawns_count; ++i) {
+          square_t square = p->ploc[WHITE].squares[i];
+          if (sq == square) {
+            exists = true;
+            break;
+          }
+        }
+        if (!exists) {
+          printf("looking for (%d, %d) in [", fil_of(sq), rnk_of(sq));
+          for (int i = 0; i < p->ploc[WHITE].pawns_count; ++i) {
+            square_t square = p->ploc[WHITE].squares[i];
+            printf("(%d, %d) ", fil_of(square), rnk_of(square));
+          }
+          printf("]\n");
+
+          printf("WHAT\n");
+        }
+
+      }
+    }
+  }
+
   if (!verbose) {
     for (int c = 0; c < 2; ++c) {
 
@@ -343,21 +383,21 @@ score_t eval(position_t *p, bool verbose) {
             if (verbose) {
               printf("MATERIAL bonus %d for %s Pawn on %s\n", bonus, color_to_str(c), buf);
             }
-            // score[c] += bonus;
+            score[c] += bonus;
 
             // PBETWEEN heuristic
             bonus = pbetween(p, f, r);
             if (verbose) {
               printf("PBETWEEN bonus %d for %s Pawn on %s\n", bonus, color_to_str(c), buf);
             }
-            // score[c] += bonus;
+            score[c] += bonus;
 
             // PCENTRAL heuristic
             bonus = pcentral(f, r);
             if (verbose) {
               printf("PCENTRAL bonus %d for %s Pawn on %s\n", bonus, color_to_str(c), buf);
             }
-            // score[c] += bonus;
+            score[c] += bonus;
             break;
 
           case KING:
@@ -367,14 +407,14 @@ score_t eval(position_t *p, bool verbose) {
               printf("KFACE bonus %d for %s King on %s\n", bonus,
                      color_to_str(c), buf);
             }
-            // score[c] += bonus;
+            score[c] += bonus;
 
             // KAGGRESSIVE heuristic
             bonus = kaggressive(p, f, r);
             if (verbose) {
               printf("KAGGRESSIVE bonus %d for %s King on %s\n", bonus, color_to_str(c), buf);
             }
-            // score[c] += bonus;
+            score[c] += bonus;
             break;
           case INVALID:
             break;
