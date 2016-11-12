@@ -329,10 +329,13 @@ int fen_to_pos(position_t *p, char *fen) {
   dmy2.history = &dmy1;
 
 
-  p->key = 0;          // hash key
-  p->victims.zapped_count = 0;       // piece destroyed by shooter
-  p->history = &dmy2;  // history
+  p->key = 0;                   // hash key
+  p->victims.zapped_count = 0;  // piece destroyed by shooter
+  p->history = &dmy2;           // history
 
+  // Pawn counts
+  p->ploc[WHITE].pawns_count = 0
+  p->ploc[BLACK].pawns_count = 0
 
   if (fen[0] == '\0') {  // Empty FEN => use starting position
     fen = "ss3nw3/3nw4/2nw1nw3/1nw3SE1SE/nw1nw3SE1/3SE1SE2/4SE3/3SE3NN W";
@@ -350,7 +353,7 @@ int fen_to_pos(position_t *p, char *fen) {
     return 1;  // parse error of board
   }
 
-  // King check
+  // King and Pawn check
 
   int Kings[2] = {0, 0};
   for (fil_t f = 0; f < BOARD_WIDTH; ++f) {
@@ -361,6 +364,11 @@ int fen_to_pos(position_t *p, char *fen) {
       if (typ == KING) {
         Kings[color_of(x)]++;
         p->kloc[color_of(x)] = sq;
+      } else if (type == PAWN) {
+        // Caution: assumes that the number of pawns per color never exceeds 8!
+        pawns_t* pawns = *(ploc[color_of(x)]);
+        (*pawns)[pawns->length]++;
+        ++pawns->length;
       }
     }
   }

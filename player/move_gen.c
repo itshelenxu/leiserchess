@@ -479,6 +479,52 @@ void low_level_make_move(position_t *old, position_t *p, move_t mv) {
     p->key ^= zob[to_sq][from_piece];  // place from_piece in to_sq
     p->key ^= zob[from_sq][to_piece];  // place to_piece in from_sq
 
+    // Update Pawn locations if necessary
+    ptype_t from_ptype = ptype_of(from_piece);
+    ptype_t to_ptype = ptype_of(to_piece);
+    color_t from_color = color_of(from_piece);
+    color_t to_color = color_of(to_piece);
+    if (from_ptype == PAWN) {
+      if (to_ptype == PAWN && from_color != to_color) {
+        // If both squares are pawns, we don't have to update the pawn arrays
+        // if the pawns are the same color.
+        // If the pawns are different colors, then we need to swap the squares
+        // in the arrays.
+
+        // First, get the index of the from-pawn.
+        for (int i = 0; i < p->ploc[from_color].pawns_count; ++i) {
+          if (from_sq == p->ploc[from_color].squares[i]) {
+            // Second, get the index of the to-pawn.
+            for (int j = 0; j < p->ploc[to_color].pawns_count; ++j) {
+              if (to_sq == p->loc[to_color].squares[j]) {
+                square_t temp = p->ploc[from_color][i];
+                p->ploc[from_color][i] = p->ploc[to_color][j];
+                p->ploc[to_color][j] = temp;
+                break;
+              }
+            }
+            break;
+          }
+        }
+      } else {
+        // The from-square is a pawn and the to-square is not a pawn.
+        for (int i = 0; i < p->ploc[from_color].pawns_count; ++i) {
+          if (from_sq == p->ploc[from_color].squares[i]) {
+            p->ploc[from_color].squares[i] = to_sq;
+            break;
+          }
+        }
+      }
+    } else if (to_ptype == PAWN) {
+      // The to-square is a pawn and the from-square is not a pawn.
+      for (int i = 0; i < p->ploc[to_color].pawns_count; ++i) {
+        if (to_sq == p->ploc[to_color].squares[i]) {
+          p->ploc[to_color].squares[i] = from_sq;
+          break;
+        }
+      }
+    }
+
     // Update King locations if necessary
     if (ptype_of(from_piece) == KING) {
       p->kloc[color_of(from_piece)] = to_sq;
@@ -533,6 +579,17 @@ victims_t make_move(position_t *old, position_t *p, move_t mv) {
     p->key ^= zob[victim_sq][victim_piece];
     p->board[victim_sq] = 0;
     p->key ^= zob[victim_sq][0];
+
+    // If the victim piece is a pawn, remove it from the pawn array.
+    if (ptype_of(victim_piece) == PAWN) {
+      color_t color = color_of(victim_piece);
+      for (int i = 0; i < p->ploc[color].pawns_count; ++i) {
+        if (victim_piece == p->ploc[color][i]) {
+          p->ploc[color][i] = p->ploc[color][p->ploc[color].pawns_count - 1];
+          p->ploc[color].pawns_count--;
+        }
+      }
+    }
 
     tbassert(p->key == compute_zob_key(p),
              "p->key: %"PRIu64", zob-key: %"PRIu64"\n",
@@ -624,6 +681,17 @@ static uint64_t perft_search(position_t *p, int depth, int ply) {
       np.key ^= zob[victim_sq][victim_piece];   // remove from board
       np.board[victim_sq] = 0;
       np.key ^= zob[victim_sq][0];
+
+      // If the victim piece is a pawn, remove it from the pawn array.
+      if (ptype_of(victim_piece) == PAWN) {
+        color_t color = color_of(victim_piece);
+        for (int i = 0; i < p->ploc[color].pawns_count; ++i) {
+          if (victim_piece == p->ploc[color][i]) {
+            p->ploc[color][i] = p->ploc[color][p->ploc[color].pawns_count - 1];
+            p->ploc[color].pawns_count--;
+          }
+        }
+      }
 
       if (ptype_of(victim_piece) == KING) break;
     }
