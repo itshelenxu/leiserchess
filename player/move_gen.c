@@ -581,12 +581,13 @@ victims_t make_move(position_t *old, position_t *p, move_t mv) {
     p->key ^= zob[victim_sq][0];
 
     // If the victim piece is a pawn, remove it from the pawn array.
+    color_t color = color_of(victim_piece);
     if (ptype_of(victim_piece) == PAWN) {
-      color_t color = color_of(victim_piece);
       for (int i = 0; i < p->ploc[color].pawns_count; ++i) {
-        if (victim_piece == p->ploc[color].squares[i]) {
+        if (victim_sq == p->ploc[color].squares[i]) {
           p->ploc[color].squares[i] = p->ploc[color].squares[p->ploc[color].pawns_count - 1];
           p->ploc[color].pawns_count--;
+          break;
         }
       }
     }
@@ -683,12 +684,13 @@ static uint64_t perft_search(position_t *p, int depth, int ply) {
       np.key ^= zob[victim_sq][0];
 
       // If the victim piece is a pawn, remove it from the pawn array.
+      color_t color = color_of(victim_piece);
       if (ptype_of(victim_piece) == PAWN) {
-        color_t color = color_of(victim_piece);
         for (int i = 0; i < p->ploc[color].pawns_count; ++i) {
-          if (victim_piece == p->ploc[color].squares[i]) {
+          if (victim_sq == p->ploc[color].squares[i]) {
             p->ploc[color].squares[i] = p->ploc[color].squares[p->ploc[color].pawns_count - 1];
             p->ploc[color].pawns_count--;
+            break;
           }
         }
       }

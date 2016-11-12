@@ -367,7 +367,7 @@ int fen_to_pos(position_t *p, char *fen) {
       } else if (typ == PAWN) {
         // Caution: assumes that the number of pawns per color never exceeds 8!
         pawns_t* pawns = &(p->ploc[color_of(x)]);
-        pawns->squares[pawns->pawns_count]++;
+        pawns->squares[pawns->pawns_count] = sq;
         ++pawns->pawns_count;
       }
     }
