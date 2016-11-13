@@ -129,10 +129,10 @@ typedef struct victims_t {
 } victims_t;
 
 // Keep track of a player's pawns (max 8).
-#define MAX_PAWNS 8
+#define MAX_PAWNS 7
 typedef struct pawns_t {
   int pawns_count;
-  square_t squares[8];
+  square_t squares[MAX_PAWNS];
 } pawns_t;
 
 // returned by make move in illegal situation
