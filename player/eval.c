@@ -300,38 +300,47 @@ score_t eval(position_t *p, bool verbose) {
   // }
   // printf("\n");
 
-  // check that the white pawns are in the correct positions
-  for (fil_t f = 0; f < BOARD_WIDTH; ++f) {
-    for (rnk_t r = 0; r < BOARD_WIDTH; ++r) {
-      square_t sq = square_of(f, r);
-      piece_t x = p->board[sq];
-      color_t c = color_of(x);
-      square_to_str(sq, buf, MAX_CHARS_IN_MOVE);
+  // // check that the white pawns are in the correct positions
+  // for (color_t COLOR = 0; COLOR < 2; ++COLOR) {
+  //   int pawn_count = 0;
 
-      if (ptype_of(x) == PAWN && color_of(x) == WHITE) {
-        bool exists = false;
+  //   for (fil_t f = 0; f < BOARD_WIDTH; ++f) {
+  //     for (rnk_t r = 0; r < BOARD_WIDTH; ++r) {
+  //       square_t sq = square_of(f, r);
+  //       piece_t x = p->board[sq];
+  //       color_t c = color_of(x);
+  //       square_to_str(sq, buf, MAX_CHARS_IN_MOVE);
 
-        for (int i = 0; i < p->ploc[WHITE].pawns_count; ++i) {
-          square_t square = p->ploc[WHITE].squares[i];
-          if (sq == square) {
-            exists = true;
-            break;
-          }
-        }
-        if (!exists) {
-          printf("looking for (%d, %d) in [", fil_of(sq), rnk_of(sq));
-          for (int i = 0; i < p->ploc[WHITE].pawns_count; ++i) {
-            square_t square = p->ploc[WHITE].squares[i];
-            printf("(%d, %d) ", fil_of(square), rnk_of(square));
-          }
-          printf("]\n");
+  //       if (ptype_of(x) == PAWN && color_of(x) == COLOR) {
+  //         bool exists = false;
 
-          printf("WHAT\n");
-        }
+  //         ++pawn_count;
 
-      }
-    }
-  }
+  //         for (int i = 0; i < p->ploc[COLOR].pawns_count; ++i) {
+  //           square_t square = p->ploc[COLOR].squares[i];
+  //           if (sq == square) {
+  //             exists = true;
+  //             break;
+  //           }
+  //         }
+  //         if (!exists) {
+  //           printf("looking for (%d, %d) in [", fil_of(sq), rnk_of(sq));
+  //           for (int i = 0; i < p->ploc[COLOR].pawns_count; ++i) {
+  //             square_t square = p->ploc[COLOR].squares[i];
+  //             printf("(%d, %d) ", fil_of(square), rnk_of(square));
+  //           }
+  //           printf("]\n");
+
+  //           printf("WHAT\n");
+  //         }
+
+  //       }
+  //     }
+  //   }
+  //   if (pawn_count != p->ploc[COLOR].pawns_count) {
+  //     printf("ahhhhhhhhhhhhhhhhhhhhhh\n");
+  //   }
+  // }
 
   if (!verbose) {
     for (int c = 0; c < 2; ++c) {
