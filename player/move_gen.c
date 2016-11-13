@@ -485,25 +485,27 @@ void low_level_make_move(position_t *old, position_t *p, move_t mv) {
     color_t from_color = color_of(from_piece);
     color_t to_color = color_of(to_piece);
     if (from_ptype == PAWN) {
-      if (to_ptype == PAWN && from_color != to_color) {
-        // If both squares are pawns, we don't have to update the pawn arrays
-        // if the pawns are the same color.
-        // If the pawns are different colors, then we need to swap the squares
-        // in the arrays.
+      if (to_ptype == PAWN) {
+        if (from_color != to_color) {
+          // If both squares are pawns, we don't have to update the pawn arrays
+          // if the pawns are the same color.
+          // If the pawns are different colors, then we need to swap the squares
+          // in the arrays.
 
-        // First, get the index of the from-pawn.
-        for (int i = 0; i < p->ploc[from_color].pawns_count; ++i) {
-          if (from_sq == p->ploc[from_color].squares[i]) {
-            // Second, get the index of the to-pawn.
-            for (int j = 0; j < p->ploc[to_color].pawns_count; ++j) {
-              if (to_sq == p->ploc[to_color].squares[j]) {
-                square_t temp = p->ploc[from_color].squares[i];
-                p->ploc[from_color].squares[i] = p->ploc[to_color].squares[j];
-                p->ploc[to_color].squares[j] = temp;
-                break;
+          // First, get the index of the from-pawn.
+          for (int i = 0; i < p->ploc[from_color].pawns_count; ++i) {
+            if (from_sq == p->ploc[from_color].squares[i]) {
+              // Second, get the index of the to-pawn.
+              for (int j = 0; j < p->ploc[to_color].pawns_count; ++j) {
+                if (to_sq == p->ploc[to_color].squares[j]) {
+                  square_t temp = p->ploc[from_color].squares[i];
+                  p->ploc[from_color].squares[i] = p->ploc[to_color].squares[j];
+                  p->ploc[to_color].squares[j] = temp;
+                  break;
+                }
               }
+              break;
             }
-            break;
           }
         }
       } else {
