@@ -119,6 +119,74 @@ ev_score_t kaggressive(position_t *p, fil_t f, rnk_t r) {
   return (KAGGRESSIVE * bonus) / (BOARD_WIDTH * BOARD_WIDTH);
 }
 
+// Harmonic-ish distance: 1/(|dx|+1) + 1/(|dy|+1)
+float h_dist(square_t a, square_t b) {
+  //  printf("a = %d, FIL(a) = %d, RNK(a) = %d\n", a, FIL(a), RNK(a));
+  //  printf("b = %d, FIL(b) = %d, RNK(b) = %d\n", b, FIL(b), RNK(b));
+  int delta_fil = abs(fil_of(a) - fil_of(b));
+  int delta_rnk = abs(rnk_of(a) - rnk_of(b));
+  float x = (1.0 / (delta_fil + 1)) + (1.0 / (delta_rnk + 1));
+  //  printf("max_dist = %d\n\n", x);
+  return x;
+}
+
+// Same as mark_laser_path(), except also computes heuristics.
+void mark_laser_path_with_heuristics(
+    position_t *p, color_t c, char *laser_map, char mark_mask,
+    int* squares_attackable,
+    int* num_enemy_pinned_pawns) {
+
+  square_t sq = p->kloc[c];
+  square_t o_king_sq = p->kloc[opp_color(c)];
+  int bdir = ori_of(p->board[sq]);
+
+  tbassert(ptype_of(p->board[sq]) == KING,
+           "ptype: %d\n", ptype_of(p->board[sq]));
+  tbassert(ptype_of(p->board[o_king_sq]) == KING,
+           "ptype: %d\n", ptype_of(p->board[o_king_sq]));
+  tbassert(color_of(p->board[o_king_sq]) != c,
+           "color: %d\n", color_of(p->board[o_king_sq]));
+
+  laser_map[sq] |= mark_mask;
+  float float_squares_attackable = h_dist(sq, o_king_sq);
+
+  while (true) {
+    sq += beam_of(bdir);
+    laser_map[sq] |= mark_mask;
+    tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
+
+    switch (ptype_of(p->board[sq])) {
+      case EMPTY:  // empty square
+        float_squares_attackable += h_dist(sq, o_king_sq);
+        break;
+      case PAWN:  // Pawn
+        float_squares_attackable += h_dist(sq, o_king_sq);
+        if (c != color_of(p->board[sq])) {
+          // pinned an enemy pawn!
+          ++(*num_enemy_pinned_pawns);
+        }
+        bdir = reflect_of(bdir, ori_of(p->board[sq]));
+        if (bdir < 0) {  // Hit back of Pawn
+          *squares_attackable = float_squares_attackable;
+          return;
+        }
+        break;
+      case KING:  // King
+        float_squares_attackable += h_dist(sq, o_king_sq);
+        *squares_attackable = float_squares_attackable;
+        return;  // sorry, game over my friend!
+        break;
+      case INVALID:  // Ran off edge of board
+        *squares_attackable = float_squares_attackable;
+        return;
+        break;
+      default:  // Shouldna happen, man!
+        tbassert(false, "Not cool, man.  Not cool.\n");
+        break;
+    }
+  }
+}
+
 // Marks the path/line-of-sight of the laser until it hits a piece or goes off
 // the board.
 //
@@ -127,8 +195,7 @@ ev_score_t kaggressive(position_t *p, fil_t f, rnk_t r) {
 // laser_map : End result will be stored here. Every square on the
 //             path of the laser is marked with mark_mask.
 // mark_mask : What each square is marked with.
-void mark_laser_path(position_t *p, color_t c, char *laser_map,
-                     char mark_mask) {
+void mark_laser_path(position_t *p, color_t c, char *laser_map, char mark_mask) {
   square_t sq = p->kloc[c];
   int bdir = ori_of(p->board[sq]);
 
@@ -165,7 +232,6 @@ void mark_laser_path(position_t *p, color_t c, char *laser_map,
 
 // PAWNPIN Heuristic: count number of pawns that are not pinned by the
 //   opposing king's laser --- and are thus mobile.
-
 int pawnpin(position_t *p, color_t color) {
   color_t c = opp_color(color);
   char laser_map[ARR_SIZE];
@@ -182,8 +248,6 @@ int pawnpin(position_t *p, color_t color) {
 
   mark_laser_path(p, c, laser_map, 1);  // find path of laser given that you aren't moving
 
-
-
   int unpinned_pawns = 0;
 
   // Figure out which pawns are not pinned down by the laser.
@@ -198,6 +262,21 @@ int pawnpin(position_t *p, color_t color) {
   }
 
   return unpinned_pawns;
+}
+
+int get_king_mobility(position_t* p, char* laser_map, color_t color) {
+  square_t king_sq = p->kloc[color];
+  int mobility = 0;
+  if (laser_map[king_sq] == 0) {
+    mobility++;
+  }
+  for (int d = 0; d < 8; ++d) {
+    square_t sq = king_sq + dir_of(d);
+    if (laser_map[sq] == 0) {
+      mobility++;
+    }
+  }
+  return mobility;
 }
 
 // MOBILITY heuristic: safe squares around king of given color.
@@ -236,17 +315,6 @@ int mobility(position_t *p, color_t color) {
   return mobility;
 }
 
-
-// Harmonic-ish distance: 1/(|dx|+1) + 1/(|dy|+1)
-float h_dist(square_t a, square_t b) {
-  //  printf("a = %d, FIL(a) = %d, RNK(a) = %d\n", a, FIL(a), RNK(a));
-  //  printf("b = %d, FIL(b) = %d, RNK(b) = %d\n", b, FIL(b), RNK(b));
-  int delta_fil = abs(fil_of(a) - fil_of(b));
-  int delta_rnk = abs(rnk_of(a) - rnk_of(b));
-  float x = (1.0 / (delta_fil + 1)) + (1.0 / (delta_rnk + 1));
-  //  printf("max_dist = %d\n\n", x);
-  return x;
-}
 
 // H_SQUARES_ATTACKABLE heuristic: for shooting the enemy king
 int h_squares_attackable(position_t *p, color_t c) {
@@ -434,35 +502,57 @@ score_t eval(position_t *p, bool verbose) {
     }
   }
 
-  // H_SQUARES_ATTACKABLE heuristic
-  ev_score_t w_hattackable = HATTACK * h_squares_attackable(p, WHITE);
-  score[WHITE] += w_hattackable;
-  if (verbose) {
-    printf("HATTACK bonus %d for White\n", w_hattackable);
+  // Initialize laser map.
+  // char laser_map[2][ARR_SIZE];
+  char white_laser_map[ARR_SIZE];
+  char black_laser_map[ARR_SIZE];
+  for (int i = 0; i < ARR_SIZE; ++i) {
+    // Invalid squares
+    white_laser_map[i] = 4;
+    black_laser_map[i] = 4;
   }
-  ev_score_t b_hattackable = HATTACK * h_squares_attackable(p, BLACK);
-  score[BLACK] += b_hattackable;
-  if (verbose) {
-    printf("HATTACK bonus %d for Black\n", b_hattackable);
+  for (fil_t f = 0; f < BOARD_WIDTH; ++f) {
+    for (rnk_t r = 0; r < BOARD_WIDTH; ++r) {
+      white_laser_map[square_of(f, r)] = 0;
+      black_laser_map[square_of(f, r)] = 0;
+    }
   }
 
-  // MOBILITY heuristic
-  int w_mobility = MOBILITY * mobility(p, WHITE);
-  score[WHITE] += w_mobility;
+  // Compute some values for heuristics.
+  int squares_attackable[2] = {0, 0};
+  int num_pinned_pawns[2] = {0, 0};
+  mark_laser_path_with_heuristics(p, WHITE, white_laser_map, 1,
+                                  &(squares_attackable[WHITE]),
+                                  &(num_pinned_pawns[BLACK]));
+  mark_laser_path_with_heuristics(p, BLACK, black_laser_map, 1,
+                                  &(squares_attackable[BLACK]),
+                                  &(num_pinned_pawns[WHITE]));
+
+  // H_SQUARES_ATTACKABLE heuristic
+  score[WHITE] += HATTACK * squares_attackable[WHITE];
+  score[BLACK] += HATTACK * squares_attackable[BLACK];
   if (verbose) {
-    printf("MOBILITY bonus %d for White\n", w_mobility);
+    printf("HATTACK bonus %d for White\n", HATTACK * squares_attackable[WHITE]);
+    printf("HATTACK bonus %d for Black\n", HATTACK * squares_attackable[BLACK]);
   }
-  int b_mobility = MOBILITY * mobility(p, BLACK);
-  score[BLACK] += b_mobility;
+  tbassert(h_squares_attackable(p, WHITE) == squares_attackable[WHITE], "\n");
+  tbassert(h_squares_attackable(p, BLACK) == squares_attackable[BLACK], "\n");
+
+  // MOBILITY heuristic
+  score[WHITE] += MOBILITY * get_king_mobility(p, black_laser_map, WHITE);
+  score[BLACK] += MOBILITY * get_king_mobility(p, white_laser_map, BLACK);
+  tbassert(mobility(p, WHITE) == get_king_mobility(p, black_laser_map, WHITE), "\n");
+  tbassert(mobility(p, BLACK) == get_king_mobility(p, white_laser_map, BLACK), "\n");
   if (verbose) {
-    printf("MOBILITY bonus %d for Black\n", b_mobility);
+    printf("MOBILITY bonus %d for White\n", MOBILITY * get_king_mobility(p, black_laser_map, WHITE));
+    printf("MOBILITY bonus %d for Black\n", MOBILITY * get_king_mobility(p, white_laser_map, BLACK));
   }
 
   // PAWNPIN heuristic --- is a pawn immobilized by the enemy laser.
-  int w_pawnpin = PAWNPIN * pawnpin(p, WHITE);
-  score[WHITE] += w_pawnpin;
-  int b_pawnpin = PAWNPIN * pawnpin(p, BLACK);
-  score[BLACK] += b_pawnpin;
+  score[WHITE] += PAWNPIN * (p->ploc[WHITE].pawns_count - num_pinned_pawns[WHITE]);
+  score[BLACK] += PAWNPIN * (p->ploc[BLACK].pawns_count - num_pinned_pawns[BLACK]);
+  tbassert(pawnpin(p, WHITE) == (p->ploc[WHITE].pawns_count - num_pinned_pawns[WHITE]), "\n");
+  tbassert(pawnpin(p, BLACK) == (p->ploc[BLACK].pawns_count - num_pinned_pawns[BLACK]), "\n");
 
   // score from WHITE point of view
   ev_score_t tot = score[WHITE] - score[BLACK];
