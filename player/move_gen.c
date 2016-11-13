@@ -607,38 +607,9 @@ victims_t make_move(position_t *old, position_t *p, move_t mv) {
     if (ptype_of(victim_piece) == KING) break;
   }
 
-  if (USE_KO) {  // Ko rule
-    if (p->key == (old->key ^ zob_color)) {
-      bool match = true;
-
-      for (fil_t f = 0; f < BOARD_WIDTH; f++) {
-        for (rnk_t r = 0; r < BOARD_WIDTH; r++) {
-          if (p->board[square_of(f, r)] !=
-              old->board[square_of(f, r)]) {
-            match = false;
-          }
-        }
-      }
-
-      if (match) return KO();
-    }
-
-    if (p->key == old->history->key) {
-      bool match = true;
-
-      for (fil_t f = 0; f < BOARD_WIDTH; f++) {
-        for (rnk_t r = 0; r < BOARD_WIDTH; r++) {
-          if (p->board[square_of(f, r)] !=
-              old->history->board[square_of(f, r)]) {
-            match = false;
-          }
-        }
-      }
-
-      if (match) return KO();
-    }
+  if (USE_KO && ((p->key == (old->key ^ zob_color)) || (p->key == old->history->key))) {
+    return KO();
   }
-
   return p->victims;
 }
 
