@@ -1,0 +1,18 @@
+cpus = 2
+book = ../tests/book.dta
+game_rounds = 5
+title = reference vs pawn reps
+adjudicate = 400
+
+# now we have the player definitions
+# --
+
+player = reference
+invoke = ../ref_player/leiserchess
+fis = 60 0.5
+# depth = 5
+
+player = pawn_rep_change
+invoke = ../player/leiserchess
+fis = 60 0.5
+# depth = 5
