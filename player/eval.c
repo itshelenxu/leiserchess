@@ -127,7 +127,7 @@ ev_score_t kaggressive(position_t *p, fil_t f, rnk_t r) {
 // laser_map : End result will be stored here. Every square on the
 //             path of the laser is marked with mark_mask.
 // mark_mask : What each square is marked with.
-void mark_laser_path(position_t *p, color_t c, char *laser_map,
+extern inline void mark_laser_path(position_t *p, color_t c, char *laser_map,
                      char mark_mask) {
   square_t sq = p->kloc[c];
   int bdir = ori_of(p->board[sq]);
@@ -168,32 +168,15 @@ void mark_laser_path(position_t *p, color_t c, char *laser_map,
 
 int pawnpin(position_t *p, color_t color) {
   color_t c = opp_color(color);
-  char laser_map[ARR_SIZE];
-
-  for (int i = 0; i < ARR_SIZE; ++i) {
-    laser_map[i] = 4;   // Invalid square
-  }
-
-  for (fil_t f = 0; f < BOARD_WIDTH; ++f) {
-    for (rnk_t r = 0; r < BOARD_WIDTH; ++r) {
-      laser_map[square_of(f, r)] = 0;
-    }
-  }
+  char laser_map[ARR_SIZE] = {0};
 
   mark_laser_path(p, c, laser_map, 1);  // find path of laser given that you aren't moving
 
-
-
   int unpinned_pawns = 0;
 
-  // Figure out which pawns are not pinned down by the laser.
-  for (fil_t f = 0; f < BOARD_WIDTH; ++f) {
-    for (rnk_t r = 0; r < BOARD_WIDTH; ++r) {
-      if (laser_map[square_of(f, r)] == 0 &&
-          color_of(p->board[square_of(f, r)]) == color &&
-          ptype_of(p->board[square_of(f, r)]) == PAWN) {
-        unpinned_pawns += 1;
-      }
+  for (int i = 0; i < p->ploc[color].pawns_count; ++i) {
+    if (laser_map[p->ploc[color].squares[i]] == 0) {
+      unpinned_pawns += 1;
     }
   }
 
@@ -301,6 +284,7 @@ score_t eval(position_t *p, bool verbose) {
   // printf("\n");
 
   // check that the white pawns are in the correct positions
+  /*
   for (fil_t f = 0; f < BOARD_WIDTH; ++f) {
     for (rnk_t r = 0; r < BOARD_WIDTH; ++r) {
       square_t sq = square_of(f, r);
@@ -332,6 +316,7 @@ score_t eval(position_t *p, bool verbose) {
       }
     }
   }
+  */
 
   if (!verbose) {
     for (int c = 0; c < 2; ++c) {

@@ -13,8 +13,8 @@
 // ev_score_t values
 #define PAWN_EV_VALUE (PAWN_VALUE*EV_SCORE_RATIO)
 
-void mark_laser_path(position_t *p, color_t c, char *laser_map,
-                     char mark_mask);
+inline void mark_laser_path(position_t *p, color_t c, char *laser_map,
+				   char mark_mask);
 
 score_t eval(position_t *p, bool verbose);
 
