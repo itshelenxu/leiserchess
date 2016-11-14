@@ -353,18 +353,21 @@ int generate_all(position_t *p, sortable_move_t *sortable_move_list,
   // 1 = path of laser with no moves
   mark_laser_path(p, opp_color(color_to_move), laser_map, 1);
 
+  // generating possible moves
+  // running total
+  int move_count = 0;
+ 
   // enumerate king positions
   // maybe better to put the king in the beginning?
   square_t king_sq = p->kloc[color_to_move];
   piece_t piece = p->board[king_sq];
+  int delta = enumerate_moves(p, sortable_move_list, &move_count, KING, king_sq);
 
   // sanity check
   tbassert(ptype_of(piece) == KING, "type: %d (should be king)", typ);
   tbassert (color_of(piece) == color_to_move, "color to move: %d, color: %d", color_to_move, color_of(piece));
 
-  // running total
-  int move_count = 0;
-  bool king_added = false;
+  bool king_added = false; 
   // iterate through pawns and kings instead
   for (int i = 0; i < p->ploc[color_to_move].pawns_count; ++i) {
     square_t sq = p->ploc[color_to_move].squares[i];
@@ -375,17 +378,14 @@ int generate_all(position_t *p, sortable_move_t *sortable_move_list,
     tbassert(color_of(piece) == color_to_move, "color to move: %d, color: %d", color_to_move, color_of(piece));
 
     // if pinned, do nothing
-    if (laser_map[sq] == 1) continue;
-
-    // if this pawn is greater (in position), do the king first
+    if (laser_map[sq] == 1) { continue; }
+/*
+    // put king before smallest pawn before it in ordering
     if (!king_added && compare_sq(king_sq, sq) == -1) {
-      int old_moves = move_count;
-      king_added = true;
-      int delta = enumerate_moves(p, sortable_move_list, &move_count, KING, king_sq);
-      tbassert(old_moves + delta == move_count,
-               "old: %d, delta: %d, new: %d\n", old_moves, delta, move_count);
+       enumerate_moves(p, sortable_move_list, &move_count, KING, king_sq);
+       king_added = true;
     }
-
+*/
     // enumerate moves of this pawn
     int temp2 = move_count;
     int moves = enumerate_moves(p, sortable_move_list, &move_count, PAWN, sq);
@@ -393,10 +393,7 @@ int generate_all(position_t *p, sortable_move_t *sortable_move_list,
              "old: %d, delta: %d, new: %d\n", temp2, moves, move_count);
   }
 
-  // in case there are no pawns
-  if (!king_added) {
-      enumerate_moves(p, sortable_move_list, &move_count, KING, king_sq);
-  }
+
   WHEN_DEBUG_VERBOSE({
     DEBUG_LOG(1, "\nGenerated moves: ");
     for (int i = 0; i < move_count; ++i) {
@@ -419,7 +416,7 @@ int generate_all(position_t *p, sortable_move_t *sortable_move_list,
 //
 // p : Current board state.
 // c : Color of king shooting laser.
-square_t fire_laser(position_t *p, color_t c) {
+inline square_t fire_laser(position_t *p, color_t c) {
   // color_t fake_color_to_move = (color_to_move_of(p) == WHITE) ? BLACK : WHITE;0
   square_t sq = p->kloc[c];
   int bdir = ori_of(p->board[sq]);
@@ -584,8 +581,8 @@ void low_level_make_move(position_t *old, position_t *p, move_t mv) {
                   square_t temp = p->ploc[from_color].squares[i];
                   p->ploc[from_color].squares[i] = p->ploc[to_color].squares[j];
                   p->ploc[to_color].squares[j] = temp;
-                  sort_pawns(p, from_color, i);
-                  sort_pawns(p, to_color, j);
+                  // sort_pawns(p, from_color, i);
+                  // sort_pawns(p, to_color, j);
                   break;
                 }
               }
@@ -598,7 +595,7 @@ void low_level_make_move(position_t *old, position_t *p, move_t mv) {
         for (int i = 0; i < p->ploc[from_color].pawns_count; ++i) {
           if (from_sq == p->ploc[from_color].squares[i]) {
             p->ploc[from_color].squares[i] = to_sq;
-            sort_pawns(p, from_color, i);
+            // sort_pawns(p, from_color, i);
             break;
           }
         }
@@ -608,7 +605,7 @@ void low_level_make_move(position_t *old, position_t *p, move_t mv) {
       for (int i = 0; i < p->ploc[to_color].pawns_count; ++i) {
         if (to_sq == p->ploc[to_color].squares[i]) {
           p->ploc[to_color].squares[i] = from_sq;
-          sort_pawns(p, to_color, i);
+          // sort_pawns(p, to_color, i);
           break;
         }
       }
