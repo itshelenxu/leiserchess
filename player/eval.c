@@ -182,7 +182,9 @@ void mark_laser_path_with_heuristics(
         }
         break;
       case KING:  // King
-        *squares_attackable += h_dist(sq, o_king_sq);
+        if (prev_state == 0) {
+          *squares_attackable += h_dist(sq, o_king_sq);
+        }
         return;  // sorry, game over my friend!
         break;
       case INVALID:  // Ran off edge of board
@@ -341,7 +343,6 @@ int mobility(position_t *p, color_t color) {
   return mobility;
 }
 
-
 // H_SQUARES_ATTACKABLE heuristic: for shooting the enemy king
 double h_squares_attackable(position_t *p, color_t c) {
   char laser_map[ARR_SIZE];
@@ -386,55 +387,6 @@ score_t eval(position_t *p, bool verbose) {
   //  int corner[2][2] = { {INF, INF}, {INF, INF} };
   ev_score_t bonus;
   char buf[MAX_CHARS_IN_MOVE];
-
-  // printf("number of white pawns: %d\n", p->ploc[WHITE].pawns_count);
-  // for (int i = 0; i < p->ploc[WHITE].pawns_count; ++i) {
-  //   square_t square = p->ploc[WHITE].squares[i];
-  //   printf("(%d, %d) ", fil_of(square), rnk_of(square));
-  // }
-  // printf("\n");
-
-  // // check that the white pawns are in the correct positions
-  // for (color_t COLOR = 0; COLOR < 2; ++COLOR) {
-  //   int pawn_count = 0;
-
-  //   for (fil_t f = 0; f < BOARD_WIDTH; ++f) {
-  //     for (rnk_t r = 0; r < BOARD_WIDTH; ++r) {
-  //       square_t sq = square_of(f, r);
-  //       piece_t x = p->board[sq];
-  //       color_t c = color_of(x);
-  //       square_to_str(sq, buf, MAX_CHARS_IN_MOVE);
-
-  //       if (ptype_of(x) == PAWN && color_of(x) == COLOR) {
-  //         bool exists = false;
-
-  //         ++pawn_count;
-
-  //         for (int i = 0; i < p->ploc[COLOR].pawns_count; ++i) {
-  //           square_t square = p->ploc[COLOR].squares[i];
-  //           if (sq == square) {
-  //             exists = true;
-  //             break;
-  //           }
-  //         }
-  //         if (!exists) {
-  //           printf("looking for (%d, %d) in [", fil_of(sq), rnk_of(sq));
-  //           for (int i = 0; i < p->ploc[COLOR].pawns_count; ++i) {
-  //             square_t square = p->ploc[COLOR].squares[i];
-  //             printf("(%d, %d) ", fil_of(square), rnk_of(square));
-  //           }
-  //           printf("]\n");
-
-  //           printf("WHAT\n");
-  //         }
-
-  //       }
-  //     }
-  //   }
-  //   if (pawn_count != p->ploc[COLOR].pawns_count) {
-  //     printf("ahhhhhhhhhhhhhhhhhhhhhh\n");
-  //   }
-  // }
 
   if (!verbose) {
     for (int c = 0; c < 2; ++c) {
@@ -561,8 +513,8 @@ score_t eval(position_t *p, bool verbose) {
     printf("HATTACK bonus %d for White\n", HATTACK * (int) squares_attackable[WHITE]);
     printf("HATTACK bonus %d for Black\n", HATTACK * (int) squares_attackable[BLACK]);
   }
-  //tbassert((int) h_squares_attackable(p, WHITE) == squares_attackable[WHITE], "\n");
-  //tbassert((int) h_squares_attackable(p, BLACK) == squares_attackable[BLACK], "\n");
+  tbassert((int) h_squares_attackable(p, WHITE) == (int) squares_attackable[WHITE], "\n");
+  tbassert((int) h_squares_attackable(p, BLACK) == (int) squares_attackable[BLACK], "\n");
 
   // MOBILITY heuristic
   score[WHITE] += MOBILITY * get_king_mobility(p, black_laser_map, WHITE);
