@@ -21,6 +21,7 @@ void mark_laser_path_with_heuristics(
     double* squares_attackable,
     int* num_enemy_pinned_pawns);
 
+int generate_pinned_pawn_list(position_t *p, color_t c, square_t* pinned_pawn_list);
 
 score_t eval(position_t *p, bool verbose);
 

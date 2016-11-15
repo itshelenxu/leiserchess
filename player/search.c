@@ -225,7 +225,7 @@ score_t searchRoot(position_t *p, score_t alpha, score_t beta, int depth,
   if (depth == 1) {
     // we are at depth 1; generate all possible moves
     num_of_moves = generate_all(p, move_list, false);
-    // To DO: need to delete // after DEBUG mode is fixed. 
+ 
     //#ifdef DEBUG
       sort_incremental(move_list, num_of_moves, 0);
     //#endif
