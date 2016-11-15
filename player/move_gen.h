@@ -178,7 +178,9 @@ void set_ori(piece_t *x, int ori);
 void init_zob();
 uint64_t compute_zob_key(position_t *p);
 
-square_t square_of(fil_t f, rnk_t r);
+//square_t square_of(fil_t f, rnk_t r);
+#define square_of(f, r) (ARR_WIDTH * (FIL_ORIGIN + (f)) + RNK_ORIGIN + (r))
+
 fil_t fil_of(square_t sq);
 rnk_t rnk_of(square_t sq);
 int square_to_str(square_t sq, char *buf, size_t bufsize);

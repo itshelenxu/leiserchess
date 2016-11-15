@@ -226,9 +226,9 @@ score_t searchRoot(position_t *p, score_t alpha, score_t beta, int depth,
     // we are at depth 1; generate all possible moves
     num_of_moves = generate_all(p, move_list, false);
  
-    //#ifdef DEBUG
+    #ifdef DEBUG
       sort_incremental(move_list, num_of_moves, 0);
-    //#endif
+    #endif
 
     // shuffle the list of moves
     for (int i = 0; i < num_of_moves; i++) {

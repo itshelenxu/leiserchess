@@ -156,13 +156,13 @@ void init_zob() {
 // Squares
 // -----------------------------------------------------------------------------
 
-// For no square, use 0, which is guaranteed to be off board
-square_t square_of(fil_t f, rnk_t r) {
-  square_t s = ARR_WIDTH * (FIL_ORIGIN + f) + RNK_ORIGIN + r;
-  DEBUG_LOG(1, "Square of (file %d, rank %d) is %d\n", f, r, s);
-  tbassert((s >= 0) && (s < ARR_SIZE), "s: %d\n", s);
-  return s;
-}
+// // For no square, use 0, which is guaranteed to be off board
+// square_t square_of(fil_t f, rnk_t r) {
+//   square_t s = ARR_WIDTH * (FIL_ORIGIN + f) + RNK_ORIGIN + r;
+//   DEBUG_LOG(1, "Square of (file %d, rank %d) is %d\n", f, r, s);
+//   tbassert((s >= 0) && (s < ARR_SIZE), "s: %d\n", s);
+//   return s;
+// }
 
 // Finds file of square
 fil_t fil_of(square_t sq) {

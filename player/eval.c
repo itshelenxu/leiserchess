@@ -561,8 +561,8 @@ score_t eval(position_t *p, bool verbose) {
     printf("HATTACK bonus %d for White\n", HATTACK * (int) squares_attackable[WHITE]);
     printf("HATTACK bonus %d for Black\n", HATTACK * (int) squares_attackable[BLACK]);
   }
-  tbassert((int) h_squares_attackable(p, WHITE) == squares_attackable[WHITE], "\n");
-  tbassert((int) h_squares_attackable(p, BLACK) == squares_attackable[BLACK], "\n");
+  //tbassert((int) h_squares_attackable(p, WHITE) == squares_attackable[WHITE], "\n");
+  //tbassert((int) h_squares_attackable(p, BLACK) == squares_attackable[BLACK], "\n");
 
   // MOBILITY heuristic
   score[WHITE] += MOBILITY * get_king_mobility(p, black_laser_map, WHITE);
