@@ -8,6 +8,11 @@
 #include "./move_gen.h"
 #include "./tbassert.h"
 
+// The reason for this constant is to handle floating point errors.
+// For example, casting 12.000000 to an int is sometimes 11 and sometimes 12.
+// Used in the h_squares_attackable heuristic.
+#define EPSILON 1e-7
+
 // -----------------------------------------------------------------------------
 // Evaluation
 // -----------------------------------------------------------------------------
@@ -120,12 +125,12 @@ ev_score_t kaggressive(position_t *p, fil_t f, rnk_t r) {
 }
 
 // Harmonic-ish distance: 1/(|dx|+1) + 1/(|dy|+1)
-float h_dist(square_t a, square_t b) {
+double h_dist(square_t a, square_t b) {
   //  printf("a = %d, FIL(a) = %d, RNK(a) = %d\n", a, FIL(a), RNK(a));
   //  printf("b = %d, FIL(b) = %d, RNK(b) = %d\n", b, FIL(b), RNK(b));
   int delta_fil = abs(fil_of(a) - fil_of(b));
   int delta_rnk = abs(rnk_of(a) - rnk_of(b));
-  float x = (1.0 / (delta_fil + 1)) + (1.0 / (delta_rnk + 1));
+  double x = (1.0 / (delta_fil + 1)) + (1.0 / (delta_rnk + 1));
   //  printf("max_dist = %d\n\n", x);
   return x;
 }
@@ -133,7 +138,7 @@ float h_dist(square_t a, square_t b) {
 // Same as mark_laser_path(), except also computes heuristics.
 void mark_laser_path_with_heuristics(
     position_t *p, color_t c, char *laser_map, char mark_mask,
-    int* squares_attackable,
+    double* squares_attackable,
     int* num_enemy_pinned_pawns) {
 
   square_t sq = p->kloc[c];
@@ -148,36 +153,39 @@ void mark_laser_path_with_heuristics(
            "color: %d\n", color_of(p->board[o_king_sq]));
 
   laser_map[sq] |= mark_mask;
-  float float_squares_attackable = h_dist(sq, o_king_sq);
+  *squares_attackable = h_dist(sq, o_king_sq) + EPSILON;
 
+  char prev_state;
   while (true) {
     sq += beam_of(bdir);
+    prev_state = laser_map[sq];
     laser_map[sq] |= mark_mask;
     tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
 
     switch (ptype_of(p->board[sq])) {
       case EMPTY:  // empty square
-        float_squares_attackable += h_dist(sq, o_king_sq);
+        if (prev_state == 0) {
+          *squares_attackable += h_dist(sq, o_king_sq);
+        }
         break;
       case PAWN:  // Pawn
-        float_squares_attackable += h_dist(sq, o_king_sq);
+        if (prev_state == 0) {
+          *squares_attackable += h_dist(sq, o_king_sq);
+        }
         if (c != color_of(p->board[sq])) {
           // pinned an enemy pawn!
           ++(*num_enemy_pinned_pawns);
         }
         bdir = reflect_of(bdir, ori_of(p->board[sq]));
         if (bdir < 0) {  // Hit back of Pawn
-          *squares_attackable = float_squares_attackable;
           return;
         }
         break;
       case KING:  // King
-        float_squares_attackable += h_dist(sq, o_king_sq);
-        *squares_attackable = float_squares_attackable;
+        *squares_attackable += h_dist(sq, o_king_sq);
         return;  // sorry, game over my friend!
         break;
       case INVALID:  // Ran off edge of board
-        *squares_attackable = float_squares_attackable;
         return;
         break;
       default:  // Shouldna happen, man!
@@ -304,7 +312,7 @@ int mobility(position_t *p, color_t color) {
 
 
 // H_SQUARES_ATTACKABLE heuristic: for shooting the enemy king
-int h_squares_attackable(position_t *p, color_t c) {
+double h_squares_attackable(position_t *p, color_t c) {
   char laser_map[ARR_SIZE];
 
   for (int i = 0; i < ARR_SIZE; ++i) {
@@ -325,7 +333,7 @@ int h_squares_attackable(position_t *p, color_t c) {
   tbassert(color_of(p->board[o_king_sq]) != c,
            "color: %d\n", color_of(p->board[o_king_sq]));
 
-  float h_attackable = 0;
+  double h_attackable = EPSILON;
   for (fil_t f = 0; f < BOARD_WIDTH; f++) {
     for (rnk_t r = 0; r < BOARD_WIDTH; r++) {
       square_t sq = square_of(f, r);
@@ -506,7 +514,7 @@ score_t eval(position_t *p, bool verbose) {
   }
 
   // Compute some values for heuristics.
-  int squares_attackable[2] = {0, 0};
+  double squares_attackable[2] = {0, 0};
   int num_pinned_pawns[2] = {0, 0};
   mark_laser_path_with_heuristics(p, WHITE, white_laser_map, 1,
                                   &(squares_attackable[WHITE]),
@@ -516,14 +524,14 @@ score_t eval(position_t *p, bool verbose) {
                                   &(num_pinned_pawns[WHITE]));
 
   // H_SQUARES_ATTACKABLE heuristic
-  score[WHITE] += HATTACK * squares_attackable[WHITE];
-  score[BLACK] += HATTACK * squares_attackable[BLACK];
+  score[WHITE] += HATTACK * (int) squares_attackable[WHITE];
+  score[BLACK] += HATTACK * (int) squares_attackable[BLACK];
   if (verbose) {
-    printf("HATTACK bonus %d for White\n", HATTACK * squares_attackable[WHITE]);
-    printf("HATTACK bonus %d for Black\n", HATTACK * squares_attackable[BLACK]);
+    printf("HATTACK bonus %d for White\n", HATTACK * (int) squares_attackable[WHITE]);
+    printf("HATTACK bonus %d for Black\n", HATTACK * (int) squares_attackable[BLACK]);
   }
-  tbassert(h_squares_attackable(p, WHITE) == squares_attackable[WHITE], "\n");
-  tbassert(h_squares_attackable(p, BLACK) == squares_attackable[BLACK], "\n");
+  tbassert((int) h_squares_attackable(p, WHITE) == squares_attackable[WHITE], "\n");
+  tbassert((int) h_squares_attackable(p, BLACK) == squares_attackable[BLACK], "\n");
 
   // MOBILITY heuristic
   score[WHITE] += MOBILITY * get_king_mobility(p, black_laser_map, WHITE);
