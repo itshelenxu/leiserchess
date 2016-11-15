@@ -530,6 +530,49 @@ int generate_all(position_t *p, sortable_move_t *sortable_move_list,
   return move_count;
 }
 
+// // -----------------------------------------------------------------------------
+// // Move execution
+// // -----------------------------------------------------------------------------
+
+// // Returns the square of piece that would be zapped by the laser if fired once,
+// // or 0 if no such piece exists.
+// //
+// // p : Current board state.
+// // c : Color of king shooting laser.
+// static inline square_t fire_laser(position_t *p, color_t c) {
+//   // color_t fake_color_to_move = (color_to_move_of(p) == WHITE) ? BLACK : WHITE;0
+//   square_t sq = p->kloc[c];
+//   int bdir = ori_of(p->board[sq]);
+
+//   tbassert(ptype_of(p->board[sq]) == KING,
+//            "ptype: %d\n", ptype_of(p->board[sq]));
+
+//   while (true) {
+//     sq += beam_of(bdir);
+//     tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
+
+//     switch (ptype_of(p->board[sq])) {
+//       case EMPTY:  // empty square
+//         break;
+//       case PAWN:  // Pawn
+//         bdir = reflect_of(bdir, ori_of(p->board[sq]));
+//         if (bdir < 0) {  // Hit back of Pawn
+//           return sq;
+//         }
+//         break;
+//       case KING:  // King
+//         return sq;  // sorry, game over my friend!
+//         break;
+//       case INVALID:  // Ran off edge of board
+//         return 0;
+//         break;
+//       default:  // Shouldna happen, man!
+//         tbassert(false, "Like porkchops and whipped cream.\n");
+//         break;
+//     }
+//   }
+// }
+
 // -----------------------------------------------------------------------------
 // Move execution
 // -----------------------------------------------------------------------------
@@ -546,29 +589,21 @@ static inline square_t fire_laser(position_t *p, color_t c) {
 
   tbassert(ptype_of(p->board[sq]) == KING,
            "ptype: %d\n", ptype_of(p->board[sq]));
+  piece_t current_piece;
 
-  while (true) {
+  while(true) {
     sq += beam_of(bdir);
     tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
-
-    switch (ptype_of(p->board[sq])) {
-      case EMPTY:  // empty square
-        break;
-      case PAWN:  // Pawn
-        bdir = reflect_of(bdir, ori_of(p->board[sq]));
-        if (bdir < 0) {  // Hit back of Pawn
-          return sq;
-        }
-        break;
-      case KING:  // King
-        return sq;  // sorry, game over my friend!
-        break;
-      case INVALID:  // Ran off edge of board
-        return 0;
-        break;
-      default:  // Shouldna happen, man!
-        tbassert(false, "Like porkchops and whipped cream.\n");
-        break;
+    current_piece = ptype_of(p->board[sq]);
+    if (current_piece == PAWN) {
+      bdir = reflect_of(bdir, ori_of(p->board[sq]));
+      if (bdir < 0) {  // Hit back of Pawn
+        return sq;
+      }
+    } else if (current_piece == KING) {
+      return sq;
+    } else if (current_piece == INVALID) {
+      return 0;
     }
   }
 }

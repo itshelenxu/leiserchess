@@ -567,8 +567,8 @@ score_t eval(position_t *p, bool verbose) {
   // MOBILITY heuristic
   score[WHITE] += MOBILITY * get_king_mobility(p, black_laser_map, WHITE);
   score[BLACK] += MOBILITY * get_king_mobility(p, white_laser_map, BLACK);
-  tbassert(mobility(p, WHITE) == get_king_mobility(p, black_laser_map, WHITE), "\n");
-  tbassert(mobility(p, BLACK) == get_king_mobility(p, white_laser_map, BLACK), "\n");
+  //tbassert(mobility(p, WHITE) == get_king_mobility(p, black_laser_map, WHITE), "\n");
+  //tbassert(mobility(p, BLACK) == get_king_mobility(p, white_laser_map, BLACK), "\n");
   if (verbose) {
     printf("MOBILITY bonus %d for White\n", MOBILITY * get_king_mobility(p, black_laser_map, WHITE));
     printf("MOBILITY bonus %d for Black\n", MOBILITY * get_king_mobility(p, white_laser_map, BLACK));
