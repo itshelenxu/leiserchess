@@ -62,7 +62,7 @@ ev_score_t pbetween(position_t *p, fil_t f, rnk_t r) {
 
 // KFACE heuristic: bonus (or penalty) for King facing toward the other King
 ev_score_t kface(position_t *p, fil_t f, rnk_t r) {
-  square_t sq = square_of(f, r);
+  square_t sq = square_table[f][r];
   piece_t x = p->board[sq];
   color_t c = color_of(x);
   square_t opp_sq = p->kloc[opp_color(c)];
@@ -97,7 +97,7 @@ ev_score_t kface(position_t *p, fil_t f, rnk_t r) {
 
 // KAGGRESSIVE heuristic: bonus for King with more space to back
 ev_score_t kaggressive(position_t *p, fil_t f, rnk_t r) {
-  square_t sq = square_of(f, r);
+  square_t sq = square_table[f][r];
   piece_t x = p->board[sq];
   color_t c = color_of(x);
   tbassert(ptype_of(x) == KING, "ptype_of(x) = %d\n", ptype_of(x));
@@ -318,7 +318,7 @@ int mobility(position_t *p, color_t color) {
 
   for (fil_t f = 0; f < BOARD_WIDTH; ++f) {
     for (rnk_t r = 0; r < BOARD_WIDTH; ++r) {
-      laser_map[square_of(f, r)] = 0;
+      laser_map[square_table[f][r]] = 0;
     }
   }
 
@@ -353,7 +353,7 @@ double h_squares_attackable(position_t *p, color_t c) {
 
   for (fil_t f = 0; f < BOARD_WIDTH; ++f) {
     for (rnk_t r = 0; r < BOARD_WIDTH; ++r) {
-      laser_map[square_of(f, r)] = 0;
+      laser_map[square_table[f][r]] = 0;
     }
   }
 
@@ -368,7 +368,7 @@ double h_squares_attackable(position_t *p, color_t c) {
   double h_attackable = EPSILON;
   for (fil_t f = 0; f < BOARD_WIDTH; f++) {
     for (rnk_t r = 0; r < BOARD_WIDTH; r++) {
-      square_t sq = square_of(f, r);
+      square_t sq = square_table[f][r];
       if (laser_map[sq] != 0) {
         h_attackable += h_dist(sq, o_king_sq);
       }
@@ -422,7 +422,7 @@ score_t eval(position_t *p, bool verbose) {
 
     for (fil_t f = 0; f < BOARD_WIDTH; f++) {
       for (rnk_t r = 0; r < BOARD_WIDTH; r++) {
-        square_t sq = square_of(f, r);
+        square_t sq = square_table[f][r];
         piece_t x = p->board[sq];
         color_t c = color_of(x);
         if (verbose) {
@@ -491,8 +491,8 @@ score_t eval(position_t *p, bool verbose) {
   }
   for (fil_t f = 0; f < BOARD_WIDTH; ++f) {
     for (rnk_t r = 0; r < BOARD_WIDTH; ++r) {
-      white_laser_map[square_of(f, r)] = 0;
-      black_laser_map[square_of(f, r)] = 0;
+      white_laser_map[square_table[f][r]] = 0;
+      black_laser_map[square_table[f][r]] = 0;
     }
   }
 

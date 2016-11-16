@@ -178,8 +178,19 @@ void set_ori(piece_t *x, int ori);
 void init_zob();
 uint64_t compute_zob_key(position_t *p);
 
-//square_t square_of(fil_t f, rnk_t r);
-#define square_of(f, r) (ARR_WIDTH * (FIL_ORIGIN + (f)) + RNK_ORIGIN + (r))
+extern const int square_table[8][8];
+/*
+const int square_table[8][8] = { 
+  { 68, 69, 70, 71, 72, 73, 74, 75 },  
+  { 84, 85, 86, 87, 88, 89, 90, 91 },
+  { 100, 101, 102, 103, 104, 105, 106, 107 },
+  { 116, 117, 118, 119, 120, 121, 122, 123 },
+  { 132, 133, 134, 135, 136, 137, 138, 139 },
+  { 148, 149, 150, 151, 152, 153, 154, 155 },
+  { 164, 165, 166, 167, 168, 169, 170, 171 },
+  { 180, 181, 182, 183, 184, 185, 186, 187 }
+};
+*/
 
 fil_t fil_of(square_t sq);
 rnk_t rnk_of(square_t sq);
