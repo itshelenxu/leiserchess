@@ -1,0 +1,16 @@
+cpus = 2
+book = ../tests/book.dta
+game_rounds = 1000
+title = basic
+adjudicate = 400
+
+# now we have the player definitions
+# --
+
+player = not lookup table
+invoke = ../player/leiserchess
+fis = 60 0.5
+
+player = lookup table
+invoke = ../player/table_test
+fis = 60 0.5

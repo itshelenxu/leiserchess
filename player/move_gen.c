@@ -187,13 +187,15 @@ int dir_of(int i) {
 }
 
 // directions for laser: NN, EE, SS, WW
-static int beam[NUM_ORI] = { 1, ARR_WIDTH, -1, -ARR_WIDTH };
 
-int beam_of(int direction) {
+// extern inline int beam_of(int direction);
+const int beam[NUM_ORI] = { 1, ARR_WIDTH, -1, -ARR_WIDTH };
+/*
+extern inline int beam_of(int direction) {
   tbassert(direction >= 0 && direction < NUM_ORI, "dir: %d\n", direction);
   return beam[direction];
 }
-
+*/
 // reflect[beam_dir][pawn_orientation]
 // -1 indicates back of Pawn
 int reflect[NUM_ORI][NUM_ORI] = {
@@ -367,7 +369,7 @@ void sort_move_list(sortable_move_t * move_list, int num_of_moves, int mv_index)
 // -----------------------------------------------------------------------------
 // Move generation
 // -----------------------------------------------------------------------------
-
+/*
 static inline int enumerate_moves(position_t * p,
                                   sortable_move_t * sortable_move_list,
                                   int *move_count, ptype_t typ, square_t sq) {
@@ -411,7 +413,7 @@ static inline int enumerate_moves(position_t * p,
 
   return num_moves;
 }
-
+*/
 // -----------------------------------------------------------------------------
 // Move generation
 // -----------------------------------------------------------------------------
@@ -566,9 +568,12 @@ static inline square_t fire_laser(position_t * p, color_t c) {
   piece_t current_piece;
 
   while (true) {
-    sq += beam_of(bdir);
+    sq += beam[bdir];
+    // sq += beam_of(bdir);
     tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
     current_piece = ptype_of(p->board[sq]);
+
+
     if (current_piece == PAWN) {
       bdir = reflect_of(bdir, ori_of(p->board[sq]));
       if (bdir < 0) {           // Hit back of Pawn
@@ -771,7 +776,8 @@ victims_t make_move(position_t * old, position_t * p, move_t mv) {
   square_t victim_sq = 0;
   p->victims.zapped_count = 0;
 
-  while ((victim_sq = fire_laser(p, color_to_move_of(old)))) {
+  color_t color_to_move = color_to_move_of(old);
+  while ((victim_sq = fire_laser(p, color_to_move))) {
     WHEN_DEBUG_VERBOSE( {
                        square_to_str(victim_sq, buf, MAX_CHARS_IN_MOVE);
                        DEBUG_LOG(1, "Zapping piece on %s\n", buf);}

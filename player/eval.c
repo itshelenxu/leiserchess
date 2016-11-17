@@ -157,7 +157,7 @@ void mark_laser_path_with_heuristics(
 
   char prev_state;
   while (true) {
-    sq += beam_of(bdir);
+    sq += beam[bdir]; //beam_of(bdir);
     prev_state = laser_map[sq];
     laser_map[sq] |= mark_mask;
     tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
@@ -216,7 +216,7 @@ extern inline void mark_laser_path(position_t *p, color_t c, char *laser_map,
   laser_map[sq] |= mark_mask;
 
   while (true) {
-    sq += beam_of(bdir);
+    sq += beam[bdir]; // beam_of(bdir);
     laser_map[sq] |= mark_mask;
     tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
 
@@ -256,7 +256,7 @@ int generate_pinned_pawn_list(position_t *p, color_t c, square_t* pinned_pawn_li
   color_t opposite_color = opp_color(c);
 
   while (true) {
-    current_loc += beam_of(laser_dir);
+    current_loc += beam[laser_dir]; // beam_of(laser_dir);
     tbassert(current_loc < ARR_SIZE && current_loc >= 0, "current_loc: %d\n", current_loc);
     current_piece = ptype_of(p->board[current_loc]);
     if (current_piece == PAWN) {

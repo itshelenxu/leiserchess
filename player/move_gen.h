@@ -15,6 +15,8 @@
 #define MAX_CHARS_IN_MOVE 16  // Could be less
 #define MAX_CHARS_IN_TOKEN 64
 
+
+
 // -----------------------------------------------------------------------------
 // Board
 // -----------------------------------------------------------------------------
@@ -201,10 +203,16 @@ const int square_table[8][8] = {
 
 int square_to_str(square_t sq, char *buf, size_t bufsize);
 
+
 #define ptype_mv_of(mv) ((ptype_t) (((mv) >> PTYPE_MV_SHIFT) & PTYPE_MV_MASK))
 #define from_square(mv) (((mv) >> FROM_SHIFT) & FROM_MASK)
 #define to_square(mv) ((mv >> TO_SHIFT) & TO_MASK)
 #define rot_of(mv) ((rot_t) ((mv >> ROT_SHIFT) & ROT_MASK))
+
+int dir_of(int i);
+
+// beam inline 
+extern const int beam[NUM_ORI];
 
 move_t move_of(ptype_t typ, rot_t rot, square_t from_sq, square_t to_sq);
 void move_to_str(move_t mv, char *buf, size_t bufsize);
