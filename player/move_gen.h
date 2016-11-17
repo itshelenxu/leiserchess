@@ -201,10 +201,6 @@ const int square_table[8][8] = {
 
 int square_to_str(square_t sq, char *buf, size_t bufsize);
 
-int dir_of(int i);
-int beam_of(int direction);
-int reflect_of(int beam_dir, int pawn_ori);
-
 #define ptype_mv_of(mv) ((ptype_t) (((mv) >> PTYPE_MV_SHIFT) & PTYPE_MV_MASK))
 #define from_square(mv) (((mv) >> FROM_SHIFT) & FROM_MASK)
 #define to_square(mv) ((mv >> TO_SHIFT) & TO_MASK)
@@ -220,12 +216,40 @@ void low_level_make_move(position_t *old, position_t *p, move_t mv);
 victims_t make_move(position_t *old, position_t *p, move_t mv);
 void display(position_t *p);
 
-victims_t KO();
-victims_t ILLEGAL();
+inline victims_t KO() {
+  return ((victims_t) {
+          KO_ZAPPED, {
+          0}
+          }
+  );
+}
 
-bool is_ILLEGAL(victims_t victims);
-bool is_KO(victims_t victims);
-bool zero_victims(victims_t victims);
-bool victim_exists(victims_t victims);
+inline victims_t ILLEGAL() {
+  return ((victims_t) {
+          ILLEGAL_ZAPPED, {
+          0}
+          }
+  );
+}
+
+int beam_of(int direction);
+int reflect_of(int beam_dir, int pawn_ori);
+int dir_of(int i);
+
+
+inline bool is_ILLEGAL(victims_t victims) {
+  return (victims.zapped_count == ILLEGAL_ZAPPED);
+}
+inline bool is_KO(victims_t victims) {
+  return (victims.zapped_count == KO_ZAPPED);
+}
+
+inline bool zero_victims(victims_t victims) {
+  return (victims.zapped_count == 0);
+}
+
+inline bool victim_exists(victims_t victims) {
+  return (victims.zapped_count > 0);
+}
 
 #endif  // MOVE_GEN_H

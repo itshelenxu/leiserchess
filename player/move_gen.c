@@ -180,11 +180,11 @@ int square_to_str(square_t sq, char *buf, size_t bufsize) {
 static int dir[8] = { -ARR_WIDTH - 1, -ARR_WIDTH, -ARR_WIDTH + 1, -1, 1,
   ARR_WIDTH - 1, ARR_WIDTH, ARR_WIDTH + 1
 };
+
 int dir_of(int i) {
   tbassert(i >= 0 && i < 8, "i: %d\n", i);
   return dir[i];
 }
-
 
 // directions for laser: NN, EE, SS, WW
 static int beam[NUM_ORI] = { 1, ARR_WIDTH, -1, -ARR_WIDTH };
@@ -1003,34 +1003,13 @@ void display(position_t * p) {
 // Ko and illegal move signalling
 // -----------------------------------------------------------------------------
 
-victims_t KO() {
-  return ((victims_t) {
-          KO_ZAPPED, {
-          0}
-          }
-  );
-}
+extern inline victims_t KO();
 
-victims_t ILLEGAL() {
-  return ((victims_t) {
-          ILLEGAL_ZAPPED, {
-          0}
-          }
-  );
-}
+extern inline victims_t ILLEGAL();
 
-bool is_KO(victims_t victims) {
-  return (victims.zapped_count == KO_ZAPPED);
-}
+extern inline bool is_KO(victims_t victims);
+extern inline bool is_ILLEGAL(victims_t victims);
 
-bool is_ILLEGAL(victims_t victims) {
-  return (victims.zapped_count == ILLEGAL_ZAPPED);
-}
+extern inline bool zero_victims(victims_t victims);
 
-bool zero_victims(victims_t victims) {
-  return (victims.zapped_count == 0);
-}
-
-bool victim_exists(victims_t victims) {
-  return (victims.zapped_count > 0);
-}
+extern inline bool victim_exists(victims_t victims);
