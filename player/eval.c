@@ -14,6 +14,7 @@
 // Used in the h_squares_attackable heuristic.
 #define EPSILON 1e-7
 
+#define NUM_SENTINELS (ARR_SIZE - (BOARD_WIDTH * BOARD_WIDTH))
 // -----------------------------------------------------------------------------
 // Evaluation
 // -----------------------------------------------------------------------------
@@ -222,6 +223,18 @@ double h_dist_table[BOARD_WIDTH][BOARD_WIDTH] = {
   }
 };
 
+
+// indices of board borders
+int edges[NUM_SENTINELS] = { 
+    0, 1, 2, 3, 4, 5, 
+    6, 7, 8, 9, 10, 19,
+    20, 29, 30, 39, 40, 49,
+    50, 59, 60, 69, 70, 79, 
+    80, 89, 90, 91, 92, 93, 
+    94, 95, 96, 97, 98, 99 
+  };
+
+
 // Harmonic-ish distance: 1/(|dx|+1) + 1/(|dy|+1)
 double h_dist(square_t a, square_t b) {
   //  printf("a = %d, FIL(a) = %d, RNK(a) = %d\n", a, FIL(a), RNK(a));
@@ -405,14 +418,22 @@ int get_king_mobility(position_t * p, char *laser_map, color_t color) {
   return mobility;
 }
 
+
 // MOBILITY heuristic: safe squares around king of given color.
 int mobility(position_t * p, color_t color) {
   color_t c = opp_color(color);
   char laser_map[ARR_SIZE];
 
+  // manually set the border
+  // laser_map_edges(laser_map); 
+  for (int i = 0; i < NUM_SENTINELS; i++) {
+    laser_map[edges[i]] = 4;
+  }
+  /*
   for (int i = 0; i < ARR_SIZE; ++i) {
     laser_map[i] = 4;           // Invalid square
   }
+  */
 
   for (fil_t f = 0; f < BOARD_WIDTH; ++f) {
     for (rnk_t r = 0; r < BOARD_WIDTH; ++r) {
@@ -588,11 +609,19 @@ score_t eval(position_t * p, bool verbose) {
   // char laser_map[2][ARR_SIZE];
   char white_laser_map[ARR_SIZE];
   char black_laser_map[ARR_SIZE];
+  
+  // fill in invalid squares
+  for (int i = 0; i < NUM_SENTINELS; i++) {
+    white_laser_map[edges[i]] = 4;
+    black_laser_map[edges[i]] = 4;
+  }
+  /* 
   for (int i = 0; i < ARR_SIZE; ++i) {
     // Invalid squares
     white_laser_map[i] = 4;
     black_laser_map[i] = 4;
   }
+  */
   for (fil_t f = 0; f < BOARD_WIDTH; ++f) {
     for (rnk_t r = 0; r < BOARD_WIDTH; ++r) {
       white_laser_map[square_table[f][r]] = 0;
