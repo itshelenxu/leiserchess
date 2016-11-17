@@ -35,14 +35,14 @@ const int large_square_table[8][8] = {
 
 // 10X10
 const int square_table[BOARD_WIDTH][BOARD_WIDTH] = {
-  { 11, 12, 13, 14, 15, 16, 17, 18 },
-  { 21, 22, 23, 24, 25, 26, 27, 28 },
-  { 31, 32, 33, 34, 35, 36, 37, 38 },
-  { 41, 42, 43, 44, 45, 46, 47, 48 },
-  { 51, 52, 53, 54, 55, 56, 57, 58 },
-  { 61, 62, 63, 64, 65, 66, 67, 68 },
-  { 71, 72, 73, 74, 75, 76, 77, 78 },
-  { 81, 82, 83, 84, 85, 86, 87, 88 }
+  {11, 12, 13, 14, 15, 16, 17, 18},
+  {21, 22, 23, 24, 25, 26, 27, 28},
+  {31, 32, 33, 34, 35, 36, 37, 38},
+  {41, 42, 43, 44, 45, 46, 47, 48},
+  {51, 52, 53, 54, 55, 56, 57, 58},
+  {61, 62, 63, 64, 65, 66, 67, 68},
+  {71, 72, 73, 74, 75, 76, 77, 78},
+  {81, 82, 83, 84, 85, 86, 87, 88}
 };
 
 int USE_KO;                     // Respect the Ko rule
@@ -156,7 +156,6 @@ uint64_t compute_zob_key(position_t * p) {
 }
 
 void init_zob() {
- // for (int i = 0; i < 16; i++) {
   for (int i = 0; i < ARR_SIZE; i++) {
     for (int j = 0; j < (1 << PIECE_SIZE); j++) {
       zob[i][j] = myrand();
@@ -171,10 +170,10 @@ void init_zob() {
 
 // // For no square, use 0, which is guaranteed to be off board
 square_t square_of(fil_t f, rnk_t r) {
-   square_t s = ARR_WIDTH * (FIL_ORIGIN + f) + RNK_ORIGIN + r;
-   DEBUG_LOG(1, "Square of (file %d, rank %d) is %d\n", f, r, s);
-   tbassert((s >= 0) && (s < ARR_SIZE), "s: %d\n", s);
-   return s;
+  square_t s = ARR_WIDTH * (FIL_ORIGIN + f) + RNK_ORIGIN + r;
+  DEBUG_LOG(1, "Square of (file %d, rank %d) is %d\n", f, r, s);
+  tbassert((s >= 0) && (s < ARR_SIZE), "s: %d\n", s);
+  return s;
 }
 
 // converts a square to string notation, returns number of characters printed
@@ -206,6 +205,7 @@ int dir_of(int i) {
 
 // extern inline int beam_of(int direction);
 const int beam[NUM_ORI] = { 1, ARR_WIDTH, -1, -ARR_WIDTH };
+
 /*
 extern inline int beam_of(int direction) {
   tbassert(direction >= 0 && direction < NUM_ORI, "dir: %d\n", direction);
@@ -434,15 +434,14 @@ static inline int enumerate_moves(position_t * p,
 // Move generation
 // -----------------------------------------------------------------------------
 
-
-
+// print output of square_of
 void print_square_table() {
-   for (fil_t f = 0; f < BOARD_WIDTH; ++f) {
-     for (rnk_t r = 0; r < BOARD_WIDTH; ++r) {
-       printf("f: %d, r: %d, square_of: %d\n", f, r, square_of(f, r));
-     }
-   }
-   exit(0);
+  for (fil_t f = 0; f < BOARD_WIDTH; ++f) {
+    for (rnk_t r = 0; r < BOARD_WIDTH; ++r) {
+      printf("f: %d, r: %d, square_of: %d\n", f, r, square_of(f, r));
+    }
+  }
+  exit(0);
 }
 
 // Generate all moves from position p.  Returns number of moves.
@@ -451,8 +450,6 @@ void print_square_table() {
 // https://chessprogramming.wikispaces.com/Move+Generation
 int generate_all(position_t * p, sortable_move_t * sortable_move_list,
                  bool strict) {
-
-  // print_square_table();
 
   color_t color_to_move = color_to_move_of(p);
   color_t opposite_color = opp_color(color_to_move);
@@ -503,7 +500,6 @@ int generate_all(position_t * p, sortable_move_t * sortable_move_list,
     if (pinned_flag) {
       continue;
     }
-
     // otherwise, generate moves
     for (int d = 0; d < 8; d++) {
       int dest = pawn_loc + dir_of(d);
@@ -646,14 +642,17 @@ void low_level_make_move(position_t * old, position_t * p, move_t mv) {
   WHEN_DEBUG_VERBOSE(char buf[MAX_CHARS_IN_MOVE]);
   WHEN_DEBUG_VERBOSE( {
                      move_to_str(mv, buf, MAX_CHARS_IN_MOVE);
-                     DEBUG_LOG(1, "low_level_make_move: %s\n", buf);});
+                     DEBUG_LOG(1, "low_level_make_move: %s\n", buf);
+                     });
 
   tbassert(old->key == compute_zob_key(old),
            "old->key: %" PRIu64 ", zob-key: %" PRIu64 "\n",
            old->key, compute_zob_key(old));
 
   WHEN_DEBUG_VERBOSE( {
-                     fprintf(stderr, "Before:\n"); display(old);});
+                     fprintf(stderr, "Before:\n");
+                     display(old);
+                     });
 
   square_t from_sq = from_square(mv);
   square_t to_sq = to_square(mv);
@@ -666,7 +665,8 @@ void low_level_make_move(position_t * old, position_t * p, move_t mv) {
                      square_to_str(from_sq, buf, MAX_CHARS_IN_MOVE);
                      DEBUG_LOG(1, "from_sq: %s\n", buf);
                      square_to_str(to_sq, buf, MAX_CHARS_IN_MOVE);
-                     DEBUG_LOG(1, "to_sq: %s\n", buf); switch (rot) {
+                     DEBUG_LOG(1, "to_sq: %s\n", buf);
+                     switch (rot) {
 case NONE:
 DEBUG_LOG(1, "rot: none\n"); break; case RIGHT:
 DEBUG_LOG(1, "rot: R\n"); break; case UTURN:
@@ -780,7 +780,9 @@ DEBUG_LOG(1, "rot: L\n"); break; default:
            p->key, compute_zob_key(p));
 
   WHEN_DEBUG_VERBOSE( {
-                     fprintf(stderr, "After:\n"); display(p);}
+                     fprintf(stderr, "After:\n");
+                     display(p);
+                     }
   );
 }
 
@@ -801,7 +803,8 @@ victims_t make_move(position_t * old, position_t * p, move_t mv) {
   while ((victim_sq = fire_laser(p, color_to_move))) {
     WHEN_DEBUG_VERBOSE( {
                        square_to_str(victim_sq, buf, MAX_CHARS_IN_MOVE);
-                       DEBUG_LOG(1, "Zapping piece on %s\n", buf);}
+                       DEBUG_LOG(1, "Zapping piece on %s\n", buf);
+                       }
     );
 
     // we definitely hit something with laser, remove it from board
@@ -830,7 +833,8 @@ victims_t make_move(position_t * old, position_t * p, move_t mv) {
 
     WHEN_DEBUG_VERBOSE( {
                        square_to_str(victim_sq, buf, MAX_CHARS_IN_MOVE);
-                       DEBUG_LOG(1, "Zapped piece on %s\n", buf);}
+                       DEBUG_LOG(1, "Zapped piece on %s\n", buf);
+                       }
     );
 
     // laser halts on king
@@ -838,9 +842,8 @@ victims_t make_move(position_t * old, position_t * p, move_t mv) {
       break;
   }
 
-  if (USE_KO
-      && ((p->key == (old->key ^ zob_color))
-          || (p->key == old->history->key))) {
+  if (USE_KO && ((p->key == (old->key ^ zob_color))
+                 || (p->key == old->history->key))) {
     return KO();
   }
   // if (USE_KO) {  // Ko rule
