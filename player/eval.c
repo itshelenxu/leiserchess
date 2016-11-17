@@ -357,24 +357,32 @@ extern inline void mark_laser_path(position_t * p, color_t c, char *laser_map,
 // return number of the pawns pinned, i.e. the length of pinned_pawn_list
 int generate_pinned_pawn_list(position_t * p, color_t c,
                               square_t * pinned_pawn_list) {
+  tbassert(pinned_pawn_list, "\n");
+
   int pinned_pawn_count = 0;
   square_t current_loc = p->kloc[c];
+
   tbassert(ptype_of(p->board[current_loc]) == KING,
            "ptype: %d\n", ptype_of(p->board[current_loc]));
+
   int laser_dir = ori_of(p->board[current_loc]);
   piece_t current_piece;
   color_t opposite_color = opp_color(c);
 
   while (true) {
-    current_loc += beam[laser_dir];     // beam_of(laser_dir);
+    current_loc += beam[laser_dir];
     tbassert(current_loc < ARR_SIZE
              && current_loc >= 0, "current_loc: %d\n", current_loc);
+
     current_piece = ptype_of(p->board[current_loc]);
+
     if (current_piece == PAWN) {
       laser_dir = reflect_of(laser_dir, ori_of(p->board[current_loc]));
+
       if (laser_dir < 0) {      // Hit back of Pawn
         return pinned_pawn_count;
       }
+
       if (color_of(p->board[current_loc]) == opposite_color) {
         pinned_pawn_list[pinned_pawn_count++] = current_loc;
       }
@@ -619,10 +627,10 @@ score_t eval(position_t * p, bool verbose) {
   //   white_laser_map[i] = 4;
   //   black_laser_map[i] = 4;
   // }
-  for (int i = 1; i < 9; ++i) {
-    for (int j = 1; j < 9; ++j) {
-      white_laser_map[10 * i + j] = 0;
-      black_laser_map[10 * i + j] = 0;
+  for (int i = RNK_ORIGIN; i < ARR_WIDTH -1; ++i) {
+    for (int j = RNK_ORIGIN; j < ARR_WIDTH - 1; ++j) {
+      white_laser_map[ARR_WIDTH * i + j] = 0;
+      black_laser_map[ARR_WIDTH * i + j] = 0;
     }
   }
 

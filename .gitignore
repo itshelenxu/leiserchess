@@ -11,3 +11,5 @@ perf.data*
 *.pgn
 *.class
 *.jar
+player/cpu*
+player/profiling*
