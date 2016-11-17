@@ -27,6 +27,7 @@
 
 // Board is 8 x 8 or 10 x 10
 #define BOARD_WIDTH 8
+#define BOARD_SIZE (BOARD_WIDTH * BOARD_WIDTH)
 
 typedef int square_t;
 typedef int rnk_t;
