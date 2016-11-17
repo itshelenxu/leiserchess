@@ -2,6 +2,7 @@
 
 #include "./eval.h"
 
+#include <float.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -33,6 +34,17 @@ int PAWNPIN;
 // Heuristics for static evaluation - described in the google doc
 // mentioned in the handout.
 
+// Table for the pcentral heuristic below.
+ev_score_t pcentral_table[BOARD_WIDTH][BOARD_WIDTH] = {
+  {125, 181, 220, 234, 234, 220, 181, 125},
+  {181, 249, 302, 323, 323, 302, 249, 181},
+  {220, 302, 375, 411, 411, 375, 302, 220},
+  {234, 323, 411, 500, 500, 411, 323, 234},
+  {234, 323, 411, 500, 500, 411, 323, 234},
+  {220, 302, 375, 411, 411, 375, 302, 220},
+  {181, 249, 302, 323, 323, 302, 249, 181},
+  {125, 181, 220, 234, 234, 220, 181, 125}
+};
 
 // PCENTRAL heuristic: Bonus for Pawn near center of board
 ev_score_t pcentral(fil_t f, rnk_t r) {
@@ -40,10 +52,9 @@ ev_score_t pcentral(fil_t f, rnk_t r) {
   if (df < 0)  df = f - BOARD_WIDTH/2;
   double dr = BOARD_WIDTH/2 - r - 1;
   if (dr < 0) dr = r - BOARD_WIDTH/2;
-  double bonus = 1 - sqrt(df * df + dr * dr) / (BOARD_WIDTH / sqrt(2));
+  double bonus = 1 - sqrt(df * df + dr * dr) / BOARD_WIDTH * sqrt(2);
   return PCENTRAL * bonus;
 }
-
 
 // returns true if c lies on or between a and b, which are not ordered
 bool between(int c, int a, int b) {
@@ -403,7 +414,8 @@ score_t eval(position_t *p, bool verbose) {
         score[c] += pbetween(p, f, r);
 
         // PCENTRAL heuristic
-        score[c] += pcentral(f, r);
+        score[c] += pcentral_table[f][r];
+        tbassert(pcentral_table[f][r] == pcentral(f, r), "\n");
       }
 
       // King heuristics
@@ -448,7 +460,8 @@ score_t eval(position_t *p, bool verbose) {
             score[c] += bonus;
 
             // PCENTRAL heuristic
-            bonus = pcentral(f, r);
+            bonus += pcentral_table[f][r];
+            tbassert(pcentral_table[f][r] == pcentral(f, r), "\n");
             if (verbose) {
               printf("PCENTRAL bonus %d for %s Pawn on %s\n", bonus, color_to_str(c), buf);
             }
@@ -519,12 +532,12 @@ score_t eval(position_t *p, bool verbose) {
   // MOBILITY heuristic
   score[WHITE] += MOBILITY * get_king_mobility(p, black_laser_map, WHITE);
   score[BLACK] += MOBILITY * get_king_mobility(p, white_laser_map, BLACK);
-  //tbassert(mobility(p, WHITE) == get_king_mobility(p, black_laser_map, WHITE), "\n");
-  //tbassert(mobility(p, BLACK) == get_king_mobility(p, white_laser_map, BLACK), "\n");
   if (verbose) {
     printf("MOBILITY bonus %d for White\n", MOBILITY * get_king_mobility(p, black_laser_map, WHITE));
     printf("MOBILITY bonus %d for Black\n", MOBILITY * get_king_mobility(p, white_laser_map, BLACK));
   }
+  tbassert(mobility(p, WHITE) == get_king_mobility(p, black_laser_map, WHITE), "\n");
+  tbassert(mobility(p, BLACK) == get_king_mobility(p, white_laser_map, BLACK), "\n");
 
   // PAWNPIN heuristic --- is a pawn immobilized by the enemy laser.
   score[WHITE] += PAWNPIN * (p->ploc[WHITE].pawns_count - num_pinned_pawns[WHITE]);
