@@ -167,13 +167,15 @@ typedef struct position {
 
 char *color_to_str(color_t c);
 color_t color_to_move_of(position_t *p);
-color_t color_of(piece_t x);
 color_t opp_color(color_t c);
 void set_color(piece_t *x, color_t c);
-ptype_t ptype_of(piece_t x);
+
 void set_ptype(piece_t *x, ptype_t pt);
-int ori_of(piece_t x);
 void set_ori(piece_t *x, int ori);
+
+#define ptype_of(x) ((ptype_t) (((x) >> PTYPE_SHIFT) & PTYPE_MASK))
+#define ori_of(x) (((x) >> ORI_SHIFT) & ORI_MASK)
+#define color_of(x) ((color_t) (((x) >> COLOR_SHIFT) & COLOR_MASK))
 
 void init_zob();
 uint64_t compute_zob_key(position_t *p);
@@ -192,18 +194,22 @@ const int square_table[8][8] = {
 };
 */
 
-fil_t fil_of(square_t sq);
-rnk_t rnk_of(square_t sq);
+// Finds file of square
+#define fil_of(sq) ((((sq) >> FIL_SHIFT) & FIL_MASK) - FIL_ORIGIN)
+// Finds rank of square
+#define rnk_of(sq) ((((sq) >> RNK_SHIFT) & RNK_MASK) - RNK_ORIGIN)
+
 int square_to_str(square_t sq, char *buf, size_t bufsize);
 
 int dir_of(int i);
 int beam_of(int direction);
 int reflect_of(int beam_dir, int pawn_ori);
 
-ptype_t ptype_mv_of(move_t mv);
-square_t from_square(move_t mv);
-square_t to_square(move_t mv);
-rot_t rot_of(move_t mv);
+#define ptype_mv_of(mv) ((ptype_t) (((mv) >> PTYPE_MV_SHIFT) & PTYPE_MV_MASK))
+#define from_square(mv) (((mv) >> FROM_SHIFT) & FROM_MASK)
+#define to_square(mv) ((mv >> TO_SHIFT) & TO_MASK)
+#define rot_of(mv) ((rot_t) ((mv >> ROT_SHIFT) & ROT_MASK))
+
 move_t move_of(ptype_t typ, rot_t rot, square_t from_sq, square_t to_sq);
 void move_to_str(move_t mv, char *buf, size_t bufsize);
 

@@ -72,10 +72,6 @@ color_t color_to_move_of(position_t * p) {
   }
 }
 
-color_t color_of(piece_t x) {
-  return (color_t) ((x >> COLOR_SHIFT) & COLOR_MASK);
-}
-
 color_t opp_color(color_t c) {
   if (c == WHITE) {
     return BLACK;
@@ -90,17 +86,8 @@ void set_color(piece_t * x, color_t c) {
   *x = ((c & COLOR_MASK) << COLOR_SHIFT) | (*x & ~(COLOR_MASK << COLOR_SHIFT));
 }
 
-
-ptype_t ptype_of(piece_t x) {
-  return (ptype_t) ((x >> PTYPE_SHIFT) & PTYPE_MASK);
-}
-
 void set_ptype(piece_t * x, ptype_t pt) {
   *x = ((pt & PTYPE_MASK) << PTYPE_SHIFT) | (*x & ~(PTYPE_MASK << PTYPE_SHIFT));
-}
-
-int ori_of(piece_t x) {
-  return (x >> ORI_SHIFT) & ORI_MASK;
 }
 
 void set_ori(piece_t * x, int ori) {
@@ -174,20 +161,6 @@ void init_zob() {
 //   return s;
 // }
 
-// Finds file of square
-fil_t fil_of(square_t sq) {
-  fil_t f = ((sq >> FIL_SHIFT) & FIL_MASK) - FIL_ORIGIN;
-  DEBUG_LOG(1, "File of square %d is %d\n", sq, f);
-  return f;
-}
-
-// Finds rank of square
-rnk_t rnk_of(square_t sq) {
-  rnk_t r = ((sq >> RNK_SHIFT) & RNK_MASK) - RNK_ORIGIN;
-  DEBUG_LOG(1, "Rank of square %d is %d\n", sq, r);
-  return r;
-}
-
 // converts a square to string notation, returns number of characters printed
 int square_to_str(square_t sq, char *buf, size_t bufsize) {
   fil_t f = fil_of(sq);
@@ -240,22 +213,6 @@ int reflect_of(int beam_dir, int pawn_ori) {
 // -----------------------------------------------------------------------------
 // Move getters and setters
 // -----------------------------------------------------------------------------
-
-ptype_t ptype_mv_of(move_t mv) {
-  return (ptype_t) ((mv >> PTYPE_MV_SHIFT) & PTYPE_MV_MASK);
-}
-
-square_t from_square(move_t mv) {
-  return (mv >> FROM_SHIFT) & FROM_MASK;
-}
-
-square_t to_square(move_t mv) {
-  return (mv >> TO_SHIFT) & TO_MASK;
-}
-
-rot_t rot_of(move_t mv) {
-  return (rot_t) ((mv >> ROT_SHIFT) & ROT_MASK);
-}
 
 move_t move_of(ptype_t typ, rot_t rot, square_t from_sq, square_t to_sq) {
   return ((typ & PTYPE_MV_MASK) << PTYPE_MV_SHIFT) |
