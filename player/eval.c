@@ -285,7 +285,10 @@ void mark_laser_path_with_heuristics(position_t * p, color_t c, char *laser_map,
           // pinned an enemy pawn!
           ++(*num_enemy_pinned_pawns);
         }
-        bdir = reflect_of(bdir, ori_of(p->board[sq]));
+
+        // int oldbdir = bdir;
+        bdir = reflect[bdir][ori_of(p->board[sq])];
+        // tbassert (bdir == reflect_of(oldbdir, ori_of(p->board[sq])), "\n");
         if (bdir < 0) {         // Hit back of Pawn
           return;
         }
@@ -333,7 +336,9 @@ extern inline void mark_laser_path(position_t * p, color_t c, char *laser_map,
       case EMPTY:              // empty square
         break;
       case PAWN:               // Pawn
-        bdir = reflect_of(bdir, ori_of(p->board[sq]));
+        bdir = reflect[bdir][ori_of(p->board[sq])];
+        // tbassert (newbdir == reflect_of(bdir, ori_of(p->board[sq])), "\n");
+        // bdir = newbdir;
         if (bdir < 0) {         // Hit back of Pawn
           return;
         }
@@ -377,8 +382,10 @@ int generate_pinned_pawn_list(position_t * p, color_t c,
     current_piece = ptype_of(p->board[current_loc]);
 
     if (current_piece == PAWN) {
-      laser_dir = reflect_of(laser_dir, ori_of(p->board[current_loc]));
-
+      // laser_dir = reflect_of(laser_dir, ori_of(p->board[current_loc]));
+      // int olddir = laser_dir;
+      laser_dir = reflect[laser_dir][ori_of(p->board[current_loc])];
+      // tbassert(laser_dir == reflect_of(olddir, ori_of(p->board[current_loc])), "\n");
       if (laser_dir < 0) {      // Hit back of Pawn
         return pinned_pawn_count;
       }

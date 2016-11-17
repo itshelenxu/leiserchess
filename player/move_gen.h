@@ -219,6 +219,10 @@ int dir_of(int i);
 // beam inline 
 extern const int beam[NUM_ORI];
 
+// reflect
+extern const int reflect[NUM_ORI][NUM_ORI];
+
+// FUNCTIONS
 move_t move_of(ptype_t typ, rot_t rot, square_t from_sq, square_t to_sq);
 void move_to_str(move_t mv, char *buf, size_t bufsize);
 
