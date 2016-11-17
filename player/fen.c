@@ -364,6 +364,7 @@ int fen_to_pos(position_t *p, char *fen) {
       if (typ == KING) {
         Kings[color_of(x)]++;
         p->kloc[color_of(x)] = sq;
+        // printf("f: %d, r: %d, sq: %d\n", f, r, sq);
       } else if (typ == PAWN) {
         // Caution: assumes that the number of pawns per color never exceeds 8!
         pawns_t* pawns = &(p->ploc[color_of(x)]);

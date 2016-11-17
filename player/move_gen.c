@@ -19,7 +19,10 @@
 #define MIN(x, y)  ((x) < (y) ? (x) : (y))
 
 // square table definition
-const int square_table[8][8] = {
+
+
+// 16x16 square table
+const int large_square_table[8][8] = {
   {68, 69, 70, 71, 72, 73, 74, 75},
   {84, 85, 86, 87, 88, 89, 90, 91},
   {100, 101, 102, 103, 104, 105, 106, 107},
@@ -28,6 +31,18 @@ const int square_table[8][8] = {
   {148, 149, 150, 151, 152, 153, 154, 155},
   {164, 165, 166, 167, 168, 169, 170, 171},
   {180, 181, 182, 183, 184, 185, 186, 187}
+};
+
+// 10X10
+const int square_table[BOARD_WIDTH][BOARD_WIDTH] = {
+  { 11, 12, 13, 14, 15, 16, 17, 18 },
+  { 21, 22, 23, 24, 25, 26, 27, 28 },
+  { 31, 32, 33, 34, 35, 36, 37, 38 },
+  { 41, 42, 43, 44, 45, 46, 47, 48 },
+  { 51, 52, 53, 54, 55, 56, 57, 58 },
+  { 61, 62, 63, 64, 65, 66, 67, 68 },
+  { 71, 72, 73, 74, 75, 76, 77, 78 },
+  { 81, 82, 83, 84, 85, 86, 87, 88 }
 };
 
 int USE_KO;                     // Respect the Ko rule
@@ -80,7 +95,6 @@ color_t opp_color(color_t c) {
   }
 }
 
-
 void set_color(piece_t * x, color_t c) {
   tbassert((c >= 0) & (c <= COLOR_MASK), "color: %d\n", c);
   *x = ((c & COLOR_MASK) << COLOR_SHIFT) | (*x & ~(COLOR_MASK << COLOR_SHIFT));
@@ -115,7 +129,7 @@ char *nesw_to_str[NUM_ORI] = { "north", "east", "south", "west" };
 // -----------------------------------------------------------------------------
 
 // Zobrist hashing
-//
+//[
 // https://chessprogramming.wikispaces.com/Zobrist+Hashing
 //
 // NOTE: Zobrist hashing uses piece_t as an integer index into to the zob table.
@@ -131,6 +145,7 @@ uint64_t compute_zob_key(position_t * p) {
   for (fil_t f = 0; f < BOARD_WIDTH; f++) {
     for (rnk_t r = 0; r < BOARD_WIDTH; r++) {
       square_t sq = square_table[f][r];
+      // key ^= zob[square_table[f][r]][p->board[sq]];
       key ^= zob[sq][p->board[sq]];
     }
   }
@@ -141,6 +156,7 @@ uint64_t compute_zob_key(position_t * p) {
 }
 
 void init_zob() {
+ // for (int i = 0; i < 16; i++) {
   for (int i = 0; i < ARR_SIZE; i++) {
     for (int j = 0; j < (1 << PIECE_SIZE); j++) {
       zob[i][j] = myrand();
@@ -154,12 +170,12 @@ void init_zob() {
 // -----------------------------------------------------------------------------
 
 // // For no square, use 0, which is guaranteed to be off board
-// square_t square_of(fil_t f, rnk_t r) {
-//   square_t s = ARR_WIDTH * (FIL_ORIGIN + f) + RNK_ORIGIN + r;
-//   DEBUG_LOG(1, "Square of (file %d, rank %d) is %d\n", f, r, s);
-//   tbassert((s >= 0) && (s < ARR_SIZE), "s: %d\n", s);
-//   return s;
-// }
+square_t square_of(fil_t f, rnk_t r) {
+   square_t s = ARR_WIDTH * (FIL_ORIGIN + f) + RNK_ORIGIN + r;
+   DEBUG_LOG(1, "Square of (file %d, rank %d) is %d\n", f, r, s);
+   tbassert((s >= 0) && (s < ARR_SIZE), "s: %d\n", s);
+   return s;
+}
 
 // converts a square to string notation, returns number of characters printed
 int square_to_str(square_t sq, char *buf, size_t bufsize) {
@@ -418,12 +434,26 @@ static inline int enumerate_moves(position_t * p,
 // Move generation
 // -----------------------------------------------------------------------------
 
+
+
+void print_square_table() {
+   for (fil_t f = 0; f < BOARD_WIDTH; ++f) {
+     for (rnk_t r = 0; r < BOARD_WIDTH; ++r) {
+       printf("f: %d, r: %d, square_of: %d\n", f, r, square_of(f, r));
+     }
+   }
+   exit(0);
+}
+
 // Generate all moves from position p.  Returns number of moves.
 // strict currently ignored
 //
 // https://chessprogramming.wikispaces.com/Move+Generation
 int generate_all(position_t * p, sortable_move_t * sortable_move_list,
                  bool strict) {
+
+  // print_square_table();
+
   color_t color_to_move = color_to_move_of(p);
   color_t opposite_color = opp_color(color_to_move);
 
@@ -456,23 +486,13 @@ int generate_all(position_t * p, sortable_move_t * sortable_move_list,
   // collect all pawns' moves
   pawns_t pawns = p->ploc[color_to_move];
   int num_pawns = pawns.pawns_count;
-  // pawns_t *pawns = malloc(sizeof(pawns_t));
-  // pawns->pawns_count = 0;
-  // for (fil_t f = 0; f < BOARD_WIDTH; f++) {
-  //   for (rnk_t r = 0; r < BOARD_WIDTH; r++) {
-  //     square_t sq = square_table[f][r];
-  //     if (ptype_of(p->board[sq]) == PAWN && color_of(p->board[sq]) == color_to_move) {
-  //       pawns->squares[pawns->pawns_count++] = sq;
-  //     } 
-  //   }
-  // }
-  // int num_pawns = pawns->pawns_count;
 
   for (int i = 0; i < num_pawns; i++) {
     square_t pawn_loc = pawns.squares[i];
-    // square_t pawn_loc = pawns->squares[i];
     tbassert(ptype_of(p->board[pawn_loc]) == PAWN,
              "ptype: %d\n", ptype_of(p->board[pawn_loc]));
+
+    // if this pawn is pinned, do not generate moves
     bool pinned_flag = false;
     for (int j = 0; j < pinned_pawn_count; j++) {
       if (pinned_pawn_list[j] == pawn_loc) {
@@ -484,6 +504,7 @@ int generate_all(position_t * p, sortable_move_t * sortable_move_list,
       continue;
     }
 
+    // otherwise, generate moves
     for (int d = 0; d < 8; d++) {
       int dest = pawn_loc + dir_of(d);
       // Skip moves into invalid squares
@@ -501,8 +522,6 @@ int generate_all(position_t * p, sortable_move_t * sortable_move_list,
     }
   }
   tbassert(move_count < MAX_NUM_MOVES, "move_count: %d\n", move_count);
-  // free(pawns);
-  // sort_move_list(sortable_move_list, move_count, 0);
   return move_count;
 }
 
@@ -638,6 +657,8 @@ void low_level_make_move(position_t * old, position_t * p, move_t mv) {
 
   square_t from_sq = from_square(mv);
   square_t to_sq = to_square(mv);
+  // printf("from sq: %d, to sq: %d\n", from_sq, to_sq);
+
   rot_t rot = rot_of(mv);
 
   WHEN_DEBUG_VERBOSE( {
@@ -955,6 +976,7 @@ void display(position_t * p) {
   printf("\ninfo Ply: %d\n", p->ply);
   printf("info Color to move: %s\n", color_to_str(color_to_move_of(p)));
 
+  // printf("kloc sq: %d, rank: %d, file: %d\n", sq, rnk_of(sq), fil_of(sq));
   square_to_str(p->kloc[WHITE], buf, MAX_CHARS_IN_MOVE);
   printf("info White King: %s, ", buf);
   square_to_str(p->kloc[BLACK], buf, MAX_CHARS_IN_MOVE);
@@ -974,10 +996,7 @@ void display(position_t * p) {
 
       tbassert(ptype_of(p->board[sq]) != INVALID,
                "ptype_of(p->board[sq]): %d\n", ptype_of(p->board[sq]));
-      /*if (p->blocked[sq]) {
-         printf(" xx");
-         continue;
-         } */
+
       if (ptype_of(p->board[sq]) == EMPTY) {    // empty square
         printf(" --");
         continue;

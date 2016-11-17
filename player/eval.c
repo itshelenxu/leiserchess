@@ -100,7 +100,7 @@ ev_score_t kaggressive(position_t *p, fil_t f, rnk_t r) {
   square_t sq = square_table[f][r];
   piece_t x = p->board[sq];
   color_t c = color_of(x);
-  tbassert(ptype_of(x) == KING, "ptype_of(x) = %d\n", ptype_of(x));
+  tbassert(ptype_of(x) == KING, "ptype_of(x) = %d, sq = %d\n", ptype_of(x), sq);
 
   square_t opp_sq = p->kloc[opp_color(c)];
   fil_t of = fil_of(opp_sq);

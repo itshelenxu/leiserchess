@@ -16,14 +16,13 @@
 #define MAX_CHARS_IN_TOKEN 64
 
 
-
 // -----------------------------------------------------------------------------
 // Board
 // -----------------------------------------------------------------------------
 
 // The board (which is 8x8 or 10x10) is centered in a 16x16 array, with the
 // excess height and width being used for sentinels.
-#define ARR_WIDTH 16
+#define ARR_WIDTH 10
 #define ARR_SIZE (ARR_WIDTH * ARR_WIDTH)
 
 // Board is 8 x 8 or 10 x 10
@@ -182,7 +181,7 @@ void set_ori(piece_t *x, int ori);
 void init_zob();
 uint64_t compute_zob_key(position_t *p);
 
-extern const int square_table[8][8];
+extern const int square_table[BOARD_WIDTH][BOARD_WIDTH];
 /*
 const int square_table[8][8] = { 
   { 68, 69, 70, 71, 72, 73, 74, 75 },  
@@ -197,9 +196,14 @@ const int square_table[8][8] = {
 */
 
 // Finds file of square
-#define fil_of(sq) ((((sq) >> FIL_SHIFT) & FIL_MASK) - FIL_ORIGIN)
+// #define fil_of(sq) ((((sq) >> FIL_SHIFT) & FIL_MASK) - FIL_ORIGIN)
 // Finds rank of square
-#define rnk_of(sq) ((((sq) >> RNK_SHIFT) & RNK_MASK) - RNK_ORIGIN)
+// #define rnk_of(sq) ((((sq) >> RNK_SHIFT) & RNK_MASK) - RNK_ORIGIN)
+
+// Finds file of square
+#define fil_of(sq) ( (int) ((int)sq / ARR_WIDTH) - FIL_ORIGIN)
+// Finds rank of square
+#define rnk_of(sq) ( ((int)sq % ARR_WIDTH) - RNK_ORIGIN )
 
 int square_to_str(square_t sq, char *buf, size_t bufsize);
 
