@@ -99,6 +99,8 @@ static int parse_fen_board(position_t *p, char *fen) {
         set_ptype(&p->board[square_table[f][r]], typ);
         set_color(&p->board[square_table[f][r]], WHITE);
         set_ori(&p->board[square_table[f][r]], ori);
+        set_rank_and_file(p, square_of(f, r));
+
         break;
 
       case 'n':
@@ -124,6 +126,7 @@ static int parse_fen_board(position_t *p, char *fen) {
         set_ptype(&p->board[square_table[f][r]], typ);
         set_color(&p->board[square_table[f][r]], BLACK);
         set_ori(&p->board[square_table[f][r]], ori);
+        set_rank_and_file(p, square_of(f, r));
         break;
 
       case 'S':
@@ -149,6 +152,7 @@ static int parse_fen_board(position_t *p, char *fen) {
         set_ptype(&p->board[square_table[f][r]], typ);
         set_color(&p->board[square_table[f][r]], WHITE);
         set_ori(&p->board[square_table[f][r]], ori);
+        set_rank_and_file(p, square_of(f, r));
         break;
 
       case 's':
@@ -174,6 +178,7 @@ static int parse_fen_board(position_t *p, char *fen) {
         set_ptype(&p->board[square_table[f][r]], typ);
         set_color(&p->board[square_table[f][r]], BLACK);
         set_ori(&p->board[square_table[f][r]], ori);
+        set_rank_and_file(p, square_of(f, r));
         break;
 
       case 'E':
@@ -187,6 +192,7 @@ static int parse_fen_board(position_t *p, char *fen) {
           set_ptype(&p->board[square_table[f][r]], KING);
           set_color(&p->board[square_table[f][r]], WHITE);
           set_ori(&p->board[square_table[f][r]], EE);
+          set_rank_and_file(p, square_of(f, r));
         } else {
           fen_error(fen, c_count+1, "Syntax error");
           return 0;
@@ -204,6 +210,7 @@ static int parse_fen_board(position_t *p, char *fen) {
           set_ptype(&p->board[square_table[f][r]], KING);
           set_color(&p->board[square_table[f][r]], WHITE);
           set_ori(&p->board[square_table[f][r]], WW);
+          set_rank_and_file(p, square_of(f, r));
         } else {
           fen_error(fen, c_count+1, "Syntax error");
           return 0;
@@ -221,6 +228,7 @@ static int parse_fen_board(position_t *p, char *fen) {
           set_ptype(&p->board[square_table[f][r]], KING);
           set_color(&p->board[square_table[f][r]], BLACK);
           set_ori(&p->board[square_table[f][r]], EE);
+          set_rank_and_file(p, square_of(f, r));
         } else {
           fen_error(fen, c_count+1, "Syntax error");
           return 0;
@@ -238,6 +246,7 @@ static int parse_fen_board(position_t *p, char *fen) {
           set_ptype(&p->board[square_table[f][r]], KING);
           set_color(&p->board[square_table[f][r]], BLACK);
           set_ori(&p->board[square_table[f][r]], WW);
+          set_rank_and_file(p, square_of(f, r));
         } else {
           fen_error(fen, c_count+1, "Syntax error");
           return 0;
@@ -336,6 +345,12 @@ int fen_to_pos(position_t *p, char *fen) {
   // Pawn counts
   p->ploc[WHITE].pawns_count = 0;
   p->ploc[BLACK].pawns_count = 0;
+
+  // initalize the ranks and files
+  for (int i=0; i < 8; i++) {
+    p->ranks[i] = 0; 
+    p->files[i] = 0; 
+  }
 
   if (fen[0] == '\0') {  // Empty FEN => use starting position
     fen = "ss3nw3/3nw4/2nw1nw3/1nw3SE1SE/nw1nw3SE1/3SE1SE2/4SE3/3SE3NN W";

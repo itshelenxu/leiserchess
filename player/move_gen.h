@@ -161,6 +161,8 @@ typedef struct position {
   victims_t    victims;          // pieces destroyed by shooter
   square_t     kloc[2];          // location of kings
   pawns_t      ploc[2];          // locations of pawns
+  uint8_t ranks[8];
+  uint8_t files[8];
 } position_t;
 
 // -----------------------------------------------------------------------------
@@ -174,10 +176,15 @@ void set_color(piece_t *x, color_t c);
 
 void set_ptype(piece_t *x, ptype_t pt);
 void set_ori(piece_t *x, int ori);
+void set_rank_and_file(position_t *p, square_t sq);
+void remove_rank_and_file(position_t *p, square_t sq);
+
+square_t next_piece(position_t *p, square_t current, king_ori_t dir);
 
 #define ptype_of(x) ((ptype_t) (((x) >> PTYPE_SHIFT) & PTYPE_MASK))
 #define ori_of(x) (((x) >> ORI_SHIFT) & ORI_MASK)
 #define color_of(x) ((color_t) (((x) >> COLOR_SHIFT) & COLOR_MASK))
+square_t square_of(fil_t f, rnk_t r);
 
 void init_zob();
 uint64_t compute_zob_key(position_t *p);

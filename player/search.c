@@ -32,6 +32,7 @@ implementation has been provided for you.
 #include "./tt.h"
 #include "./util.h"
 #include "./fen.h"
+#include "./move_gen.h"
 #include "./tbassert.h"
 
 

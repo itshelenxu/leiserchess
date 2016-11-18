@@ -108,6 +108,82 @@ void set_ori(piece_t * x, int ori) {
   *x = ((ori & ORI_MASK) << ORI_SHIFT) | (*x & ~(ORI_MASK << ORI_SHIFT));
 }
 
+void set_rank_and_file(position_t *p, square_t sq) {
+  int rank = rnk_of(sq);
+  int file = fil_of(sq);
+
+  p->files[file] |= (1 << rank);
+  p->ranks[rank] |= (1 << file);
+}
+
+void remove_rank_and_file(position_t *p, square_t sq) {
+  int rank = rnk_of(sq);
+  int file = fil_of(sq);
+
+  p->files[file] &= ~(1 << rank);
+  p->ranks[rank] &= ~(1 << file);
+}
+
+// find the location of next piece along the laser path 
+// return 0 if go out of the board
+square_t next_piece(position_t *p, square_t current, king_ori_t dir) {
+  int rank = rnk_of(current);
+  int file = fil_of(current);
+
+  switch (dir) {
+    case NN: {
+      uint8_t bit_array = p->files[file];
+      uint8_t bits_left = bit_array >> (rank + 1);
+      if (bits_left == 0) { // laser goes out of the board
+        return 0;
+      } else {
+        int trailing_zeros = __builtin_ctz(bits_left);
+        return (file + FIL_ORIGIN) * ARR_WIDTH + RNK_ORIGIN + rank + trailing_zeros + 1; // location of next piece 
+      }
+    }
+    case SS: {
+      uint8_t bit_array = p->files[file];
+      uint8_t bits_left = bit_array << (8 - rank);
+      if (bits_left == 0) { // laser goes out of the board
+        return 0;
+      } else {
+        int leading_zeros = __builtin_clz(bits_left) - 24;  // __builtin_clz is for 32 bit unsigned int  
+        tbassert(((file + FIL_ORIGIN) * ARR_WIDTH + RNK_ORIGIN + rank - leading_zeros - 1) < ARR_SIZE && 
+                  ((file + FIL_ORIGIN) * ARR_WIDTH + RNK_ORIGIN + rank - leading_zeros - 1) >= 0, 
+                  "file:%d, rank: %d, bits_left: %d, bit_array: %d, leading zeros: %d\n", 
+                  file, rank, bits_left, bit_array, leading_zeros);
+        return (file + FIL_ORIGIN) * ARR_WIDTH + RNK_ORIGIN + rank - leading_zeros - 1; // location of next piece 
+      }
+    }
+    case WW: {
+      uint8_t bit_array = p->ranks[rank];
+      uint8_t bits_left = bit_array << (8 - file);
+      if (bits_left == 0) { // laser goes out of the board
+        return 0;
+      } else {
+        int leading_zeros = __builtin_clz(bits_left) - 24; // __builtin_clz is for 32 bit unsigned int 
+        tbassert(((file + FIL_ORIGIN - leading_zeros - 1) * ARR_WIDTH + RNK_ORIGIN + rank) < ARR_SIZE && 
+                  ((file + FIL_ORIGIN - leading_zeros - 1) * ARR_WIDTH + RNK_ORIGIN + rank) >= 0, "error\n");
+        return (file + FIL_ORIGIN - leading_zeros - 1) * ARR_WIDTH + RNK_ORIGIN + rank; // location of next piece 
+      }
+    }
+    case EE: {
+      uint8_t bit_array = p->ranks[rank];
+      uint8_t bits_left = bit_array >> (file + 1);
+      if (bits_left == 0) { // laser goes out of the board
+        return 0;
+      } else {
+        int trailing_zeros = __builtin_ctz(bits_left);
+        return (file + FIL_ORIGIN + trailing_zeros + 1) * ARR_WIDTH + RNK_ORIGIN + rank; // location of next piece 
+      }
+    }
+
+    default:
+      tbassert(false, "error");
+      return -1;
+  }
+}
+
 // -----------------------------------------------------------------------------
 // Piece orientation strings
 // -----------------------------------------------------------------------------
@@ -583,11 +659,10 @@ static inline square_t fire_laser(position_t * p, color_t c) {
   piece_t current_piece;
 
   while (true) {
-    sq += beam[bdir];
-    // sq += beam_of(bdir);
+    sq = next_piece(p, sq, bdir);
+
     tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
     current_piece = ptype_of(p->board[sq]);
-
 
     if (current_piece == PAWN) {
       bdir = reflect_of(bdir, ori_of(p->board[sq]));
@@ -656,27 +731,33 @@ void low_level_make_move(position_t * old, position_t * p, move_t mv) {
 
   square_t from_sq = from_square(mv);
   square_t to_sq = to_square(mv);
-  // printf("from sq: %d, to sq: %d\n", from_sq, to_sq);
-
   rot_t rot = rot_of(mv);
 
-  WHEN_DEBUG_VERBOSE( {
-                     DEBUG_LOG(1, "low_level_make_move 2:\n");
-                     square_to_str(from_sq, buf, MAX_CHARS_IN_MOVE);
-                     DEBUG_LOG(1, "from_sq: %s\n", buf);
-                     square_to_str(to_sq, buf, MAX_CHARS_IN_MOVE);
-                     DEBUG_LOG(1, "to_sq: %s\n", buf);
-                     switch (rot) {
-case NONE:
-DEBUG_LOG(1, "rot: none\n"); break; case RIGHT:
-DEBUG_LOG(1, "rot: R\n"); break; case UTURN:
-DEBUG_LOG(1, "rot: U\n"); break; case LEFT:
-DEBUG_LOG(1, "rot: L\n"); break; default:
-                     tbassert(false, "Not like a boss at all.\n");      // Bad, bad, bad
-                     break;}
-                     }
-  );
-
+  WHEN_DEBUG_VERBOSE({
+      DEBUG_LOG(1, "low_level_make_move 2:\n");
+      square_to_str(from_sq, buf, MAX_CHARS_IN_MOVE);
+      DEBUG_LOG(1, "from_sq: %s\n", buf);
+      square_to_str(to_sq, buf, MAX_CHARS_IN_MOVE);
+      DEBUG_LOG(1, "to_sq: %s\n", buf);
+      switch (rot) {
+        case NONE:
+          DEBUG_LOG(1, "rot: none\n");
+          break;
+        case RIGHT:
+          DEBUG_LOG(1, "rot: R\n");
+          break;
+        case UTURN:
+          DEBUG_LOG(1, "rot: U\n");
+          break;
+        case LEFT:
+          DEBUG_LOG(1, "rot: L\n");
+          break;
+        default:
+          tbassert(false, "Not like a boss at all.\n");  // Bad, bad, bad
+          break;
+      }   
+    }); 
+  
   *p = *old;
 
   p->history = old;
@@ -705,11 +786,34 @@ DEBUG_LOG(1, "rot: L\n"); break; default:
     p->key ^= zob[to_sq][from_piece];   // place from_piece in to_sq
     p->key ^= zob[from_sq][to_piece];   // place to_piece in from_sq
 
-    // Update Pawn locations if necessary
+    
     ptype_t from_ptype = ptype_of(from_piece);
     ptype_t to_ptype = ptype_of(to_piece);
     color_t from_color = color_of(from_piece);
     color_t to_color = color_of(to_piece);
+
+    // update p->ranks and p->files
+    tbassert(from_ptype != INVALID && to_ptype != INVALID, 
+             "Error: from_ptype or to_ptype is INVALID");
+    tbassert(from_ptype == PAWN || from_ptype == KING, 
+             "Error: from_ptype should be either PAWN or KING");
+    
+    if (to_ptype == EMPTY) {
+      int from_rank = rnk_of(from_sq);
+      int from_file = fil_of(from_sq);
+      int to_rank = rnk_of(to_sq);
+      int to_file = fil_of(to_sq);  
+
+      // add the new piece
+      p->ranks[to_rank] |= (1 << to_file); 
+      p->files[to_file] |= (1 << to_rank);
+
+      // remove the old piece
+      p->ranks[from_rank] &= ~(1 << from_file); 
+      p->files[from_file] &= ~(1 << from_rank);
+    } 
+
+    // Update Pawn locations if necessary
     if (from_ptype == PAWN) {
       if (to_ptype == PAWN) {
         if (from_color != to_color) {
@@ -786,7 +890,7 @@ DEBUG_LOG(1, "rot: L\n"); break; default:
   );
 }
 
-// return victim pieces or KO
+// return victims or KO
 victims_t make_move(position_t * old, position_t * p, move_t mv) {
   tbassert(mv != 0, "mv was zero.\n");
 
@@ -794,7 +898,7 @@ victims_t make_move(position_t * old, position_t * p, move_t mv) {
 
   // move phase 1 - moving a piece
   low_level_make_move(old, p, mv);
-
+  
   // move phase 2 - shooting the laser
   square_t victim_sq = 0;
   p->victims.zapped_count = 0;
@@ -813,6 +917,12 @@ victims_t make_move(position_t * old, position_t * p, move_t mv) {
     p->key ^= zob[victim_sq][victim_piece];
     p->board[victim_sq] = 0;
     p->key ^= zob[victim_sq][0];
+
+    // remove the zapped piece
+    int victim_rank = rnk_of(victim_sq);
+    int victim_file = fil_of(victim_sq);
+    p->ranks[victim_rank] &= ~(1 << victim_file); 
+    p->files[victim_file] &= ~(1 << victim_rank);
 
     // If the victim piece is a pawn, remove it from the pawn array.
     color_t color = color_of(victim_piece);

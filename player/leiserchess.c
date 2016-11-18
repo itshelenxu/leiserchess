@@ -150,7 +150,6 @@ victims_t make_from_string(position_t *old, position_t *p,
       break;
     }
   }
-
   return (mv == 0) ? ILLEGAL() : make_move(old, p, mv);
 }
 
