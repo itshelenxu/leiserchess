@@ -2,7 +2,6 @@
 
 #include "./eval.h"
 
-#include <float.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -225,13 +224,13 @@ double h_dist_table[BOARD_WIDTH][BOARD_WIDTH] = {
 
 
 // indices of board borders
-int edges[NUM_SENTINELS] = { 
-    0, 1, 2, 3, 4, 5, 
+int edges[NUM_SENTINELS] = {
+    0, 1, 2, 3, 4, 5,
     6, 7, 8, 9, 10, 19,
     20, 29, 30, 39, 40, 49,
-    50, 59, 60, 69, 70, 79, 
-    80, 89, 90, 91, 92, 93, 
-    94, 95, 96, 97, 98, 99 
+    50, 59, 60, 69, 70, 79,
+    80, 89, 90, 91, 92, 93,
+    94, 95, 96, 97, 98, 99
   };
 
 
@@ -286,7 +285,10 @@ void mark_laser_path_with_heuristics(position_t * p, color_t c, char *laser_map,
           // pinned an enemy pawn!
           ++(*num_enemy_pinned_pawns);
         }
-        bdir = reflect_of(bdir, ori_of(p->board[sq]));
+
+        // int oldbdir = bdir;
+        bdir = reflect[bdir][ori_of(p->board[sq])];
+        // tbassert (bdir == reflect_of(oldbdir, ori_of(p->board[sq])), "\n");
         if (bdir < 0) {         // Hit back of Pawn
           return;
         }
@@ -334,7 +336,9 @@ extern inline void mark_laser_path(position_t * p, color_t c, char *laser_map,
       case EMPTY:              // empty square
         break;
       case PAWN:               // Pawn
-        bdir = reflect_of(bdir, ori_of(p->board[sq]));
+        bdir = reflect[bdir][ori_of(p->board[sq])];
+        // tbassert (newbdir == reflect_of(bdir, ori_of(p->board[sq])), "\n");
+        // bdir = newbdir;
         if (bdir < 0) {         // Hit back of Pawn
           return;
         }
@@ -354,28 +358,38 @@ extern inline void mark_laser_path(position_t * p, color_t c, char *laser_map,
 
 // p : Current board state.
 // c : Color of king shooting laser.
-// pinned_pawn_list: all the pawns of the opposite side pinned by color c's king  
-// return number of the pawns pinned, i.e. the length of pinned_pawn_list   
+// pinned_pawn_list: all the pawns of the opposite side pinned by color c's king
+// return number of the pawns pinned, i.e. the length of pinned_pawn_list
 int generate_pinned_pawn_list(position_t * p, color_t c,
                               square_t * pinned_pawn_list) {
+  tbassert(pinned_pawn_list, "\n");
+
   int pinned_pawn_count = 0;
   square_t current_loc = p->kloc[c];
+
   tbassert(ptype_of(p->board[current_loc]) == KING,
            "ptype: %d\n", ptype_of(p->board[current_loc]));
+
   int laser_dir = ori_of(p->board[current_loc]);
   piece_t current_piece;
   color_t opposite_color = opp_color(c);
 
   while (true) {
-    current_loc += beam[laser_dir];     // beam_of(laser_dir);
+    current_loc += beam[laser_dir];
     tbassert(current_loc < ARR_SIZE
              && current_loc >= 0, "current_loc: %d\n", current_loc);
+
     current_piece = ptype_of(p->board[current_loc]);
+
     if (current_piece == PAWN) {
-      laser_dir = reflect_of(laser_dir, ori_of(p->board[current_loc]));
+      // laser_dir = reflect_of(laser_dir, ori_of(p->board[current_loc]));
+      // int olddir = laser_dir;
+      laser_dir = reflect[laser_dir][ori_of(p->board[current_loc])];
+      // tbassert(laser_dir == reflect_of(olddir, ori_of(p->board[current_loc])), "\n");
       if (laser_dir < 0) {      // Hit back of Pawn
         return pinned_pawn_count;
       }
+
       if (color_of(p->board[current_loc]) == opposite_color) {
         pinned_pawn_list[pinned_pawn_count++] = current_loc;
       }
@@ -425,7 +439,7 @@ int mobility(position_t * p, color_t color) {
   char laser_map[ARR_SIZE];
 
   // manually set the border
-  // laser_map_edges(laser_map); 
+  // laser_map_edges(laser_map);
   for (int i = 0; i < NUM_SENTINELS; i++) {
     laser_map[edges[i]] = 4;
   }
@@ -609,23 +623,21 @@ score_t eval(position_t * p, bool verbose) {
   // char laser_map[2][ARR_SIZE];
   char white_laser_map[ARR_SIZE];
   char black_laser_map[ARR_SIZE];
-  
+
   // fill in invalid squares
   for (int i = 0; i < NUM_SENTINELS; i++) {
     white_laser_map[edges[i]] = 4;
     black_laser_map[edges[i]] = 4;
   }
-  /* 
-  for (int i = 0; i < ARR_SIZE; ++i) {
-    // Invalid squares
-    white_laser_map[i] = 4;
-    black_laser_map[i] = 4;
-  }
-  */
-  for (fil_t f = 0; f < BOARD_WIDTH; ++f) {
-    for (rnk_t r = 0; r < BOARD_WIDTH; ++r) {
-      white_laser_map[square_table[f][r]] = 0;
-      black_laser_map[square_table[f][r]] = 0;
+  // for (int i = 0; i < ARR_SIZE; ++i) {
+  //   // Invalid squares
+  //   white_laser_map[i] = 4;
+  //   black_laser_map[i] = 4;
+  // }
+  for (int i = RNK_ORIGIN; i < ARR_WIDTH -1; ++i) {
+    for (int j = RNK_ORIGIN; j < ARR_WIDTH - 1; ++j) {
+      white_laser_map[ARR_WIDTH * i + j] = 0;
+      black_laser_map[ARR_WIDTH * i + j] = 0;
     }
   }
 

@@ -85,7 +85,6 @@ static score_t scout_search(searchNode *node, int depth,
 
   int number_of_moves_evaluated = 0;
 
-
   // A simple mutex. See simple_mutex.h for implementation details.
   simple_mutex_t node_mutex;
   init_simple_mutex(&node_mutex);

@@ -226,13 +226,17 @@ int dir_of(int i);
 // beam inline 
 extern const int beam[NUM_ORI];
 
+// reflect
+extern const int reflect[NUM_ORI][NUM_ORI];
+
+// FUNCTIONS
 move_t move_of(ptype_t typ, rot_t rot, square_t from_sq, square_t to_sq);
 void move_to_str(move_t mv, char *buf, size_t bufsize);
 
 int generate_all(position_t *p, sortable_move_t *sortable_move_list,
                  bool strict);
 void do_perft(position_t *gme, int depth, int ply);
-void low_level_make_move(position_t *old, position_t *p, move_t mv);
+static inline void low_level_make_move(position_t *old, position_t *p, move_t mv);
 victims_t make_move(position_t *old, position_t *p, move_t mv);
 void display(position_t *p);
 

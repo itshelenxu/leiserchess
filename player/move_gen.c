@@ -290,7 +290,7 @@ extern inline int beam_of(int direction) {
 */
 // reflect[beam_dir][pawn_orientation]
 // -1 indicates back of Pawn
-int reflect[NUM_ORI][NUM_ORI] = {
+const int reflect[NUM_ORI][NUM_ORI] = {
   //  NW  NE  SE  SW
   {-1, -1, EE, WW},             // NN
   {NN, -1, -1, SS},             // EE
@@ -665,7 +665,9 @@ static inline square_t fire_laser(position_t * p, color_t c) {
     current_piece = ptype_of(p->board[sq]);
 
     if (current_piece == PAWN) {
-      bdir = reflect_of(bdir, ori_of(p->board[sq]));
+      // int oldbdir = bdir;
+      bdir = reflect[bdir][ori_of(p->board[sq])]; 
+      // tbassert(bdir == reflect_of(oldbdir, ori_of(p->board[sq])), "\n");
       if (bdir < 0) {           // Hit back of Pawn
         return sq;
       }
