@@ -7,7 +7,7 @@ UNAME := $(shell uname)
 
 ifeq ($(PARALLEL),1)
 	OS_TYPE := Parallel Linux
-	PFLAG := -DPARALLEL -D_BSD_SOURCE -D_XOPEN_SOURCE
+	PFLAG := -DPARALLEL -D_BSD_SOURCE -D_XOPEN_SOURCE=700
 	# -g needed for test framework assertions
 	#
 	# switch -fdetach to -ftapir to enable Tapir optimization passes for better

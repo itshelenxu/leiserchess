@@ -9,10 +9,12 @@
 #include "./tbassert.h"
 #include "./simple_mutex.h"
 
+#define YOUNG_SIBLINGS_WAIT 5
+
 // Checks whether a node's parent has aborted.
 //   If this occurs, we should just stop and return 0 immediately.
-bool parallel_parent_aborted(searchNode* node) {
-  searchNode* pred = node->parent;
+bool parallel_parent_aborted(searchNode * node) {
+  searchNode *pred = node->parent;
   while (pred != NULL) {
     if (pred->abort) {
       return true;
@@ -24,7 +26,7 @@ bool parallel_parent_aborted(searchNode* node) {
 
 // Checks whether this node has aborted due to a cut-off.
 //   If this occurs, we should actually return the score.
-bool parallel_node_aborted(searchNode* node) {
+bool parallel_node_aborted(searchNode * node) {
   if (node->abort) {
     return true;
   }
@@ -34,7 +36,7 @@ bool parallel_node_aborted(searchNode* node) {
 // Initialize a scout search node for a "Null Window" search.
 //   https://chessprogramming.wikispaces.com/Scout
 //   https://chessprogramming.wikispaces.com/Null+Window
-static void initialize_scout_node(searchNode *node, int depth) {
+static void initialize_scout_node(searchNode * node, int depth) {
   node->type = SEARCH_SCOUT;
   node->beta = -(node->parent->alpha);
   node->alpha = node->beta - 1;
@@ -45,12 +47,12 @@ static void initialize_scout_node(searchNode *node, int depth) {
   node->fake_color_to_move = color_to_move_of(&(node->position));
   // point of view = 1 for white, -1 for black
   node->pov = 1 - node->fake_color_to_move * 2;
-  node->best_move_index = 0;  // index of best move found
+  node->best_move_index = 0;    // index of best move found
   node->abort = false;
 }
 
-static score_t scout_search(searchNode *node, int depth,
-                            uint64_t *node_count_serial) {
+static score_t scout_search(searchNode * node, int depth,
+                            uint64_t * node_count_serial) {
   // Initialize the search node.
   initialize_scout_node(node, depth);
 
@@ -58,7 +60,6 @@ static score_t scout_search(searchNode *node, int depth,
   if (should_abort_check() || parallel_parent_aborted(node)) {
     return 0;
   }
-
   // Pre-evaluate this position.
   leafEvalResult pre_evaluation_result = evaluate_as_leaf(node, SEARCH_SCOUT);
 
@@ -66,7 +67,6 @@ static score_t scout_search(searchNode *node, int depth,
   if (pre_evaluation_result.type == MOVE_EVALUATED) {
     return pre_evaluation_result.score;
   }
-
   // Populate some of the fields of this search node, using some
   //  of the information provided by the pre-evaluation.
   int hash_table_move = pre_evaluation_result.hash_table_move;
@@ -90,56 +90,89 @@ static score_t scout_search(searchNode *node, int depth,
   simple_mutex_t node_mutex;
   init_simple_mutex(&node_mutex);
 
+  bool cutoff = false;
   // TODO: experiment with sorting at each iteration vs all at the beginning
   // Sort the move list.
   sort_incremental(move_list, num_of_moves, number_of_moves_evaluated);
 
-  cilk_for (int mv_index = 0; mv_index < num_of_moves; mv_index++) {
-    do { 
-      if (node->abort) continue;
+  // older siblings first in serial
+  for (int mv_index = 0; mv_index < YOUNG_SIBLINGS_WAIT; mv_index++) {
+    // Get the next move from the move list.
+    int local_index = number_of_moves_evaluated++;
+    move_t mv = get_move(move_list[local_index]);
+    if (TRACE_MOVES) {
+      print_move_info(mv, node->ply);
+    }
+    // increase node count
+    __sync_fetch_and_add(node_count_serial, 1);
 
-      // Get the next move from the move list.
-      int local_index = __sync_fetch_and_add(&number_of_moves_evaluated, 1);
-      move_t mv = get_move(move_list[local_index]);
-
-      if (TRACE_MOVES) {
-        print_move_info(mv, node->ply);
-      }
-
-      // increase node count
-      __sync_fetch_and_add(node_count_serial, 1);
-  
-      /*
-      moveEvaluationResult result = evaluateMove(node, mv, killer_a, killer_b,
+    moveEvaluationResult result = evaluateMove(node, mv, killer_a, killer_b,
                                                SEARCH_SCOUT,
                                                node_count_serial);
-      */
-      moveEvaluationResult result = evaluateMove(node, mv, killer_a, killer_b,
-                                               SEARCH_SCOUT,
-                                               node_count_serial);
-    
-      if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
-          || abortf || parallel_parent_aborted(node)) {
-        continue;
-      }
 
-      // A legal move is a move that's not KO, but when we are in quiescence
-      // we only want to count moves that has a capture.
-      if (result.type == MOVE_EVALUATED) {
-        // node->legal_move_count++;
-        __sync_fetch_and_add(&(node->legal_move_count), 1);
-      }
+    if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
+        || abortf || parallel_parent_aborted(node)) {
+      continue;
+    }
+    // we only want to count moves that has a capture.
+    if (result.type == MOVE_EVALUATED) {
+      node->legal_move_count++;
+    }
 
-      simple_acquire(&node_mutex);
-      // process the score. Note that this mutates fields in node.
-      bool cutoff = search_process_score(node, mv, local_index, &result, SEARCH_SCOUT);
-      simple_release(&node_mutex);
+    cutoff = search_process_score(node, mv, local_index, &result, SEARCH_SCOUT);
 
-      if (cutoff) {
-        node->abort = true;
-        continue;
-      }
-    } while (false);
+    if (cutoff) {
+      // printf("cutoff\n");
+      node->abort = true;
+      break;
+    }
+  }
+
+  if (!cutoff) {
+    // parallel part
+    cilk_for(int mv_index = YOUNG_SIBLINGS_WAIT;
+             mv_index < num_of_moves; mv_index++) {
+      do {
+        if (node->abort)
+          continue;
+
+        // Get the next move from the move list.
+        int local_index = __sync_fetch_and_add(&number_of_moves_evaluated, 1);
+        move_t mv = get_move(move_list[local_index]);
+
+        if (TRACE_MOVES) {
+          print_move_info(mv, node->ply);
+        }
+        // increase node count
+        __sync_fetch_and_add(node_count_serial, 1);
+
+        moveEvaluationResult result = evaluateMove(node, mv, killer_a, killer_b,
+                                                   SEARCH_SCOUT,
+                                                   node_count_serial);
+
+        if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
+            || abortf || parallel_parent_aborted(node)) {
+          continue;
+        }
+        // A legal move is a move that's not KO, but when we are in quiescence
+        // we only want to count moves that has a capture.
+        if (result.type == MOVE_EVALUATED) {
+          // node->legal_move_count++;
+          __sync_fetch_and_add(&(node->legal_move_count), 1);
+        }
+
+        simple_acquire(&node_mutex);
+        // process the score. Note that this mutates fields in node.
+        bool local_cutoff =
+          search_process_score(node, mv, local_index, &result, SEARCH_SCOUT);
+        simple_release(&node_mutex);
+
+        if (local_cutoff) {
+          node->abort = true;
+          continue;
+        }
+      } while (false);
+    }
   }
 
   if (parallel_parent_aborted(node)) {
@@ -159,5 +192,3 @@ static score_t scout_search(searchNode *node, int depth,
 
   return node->best_score;
 }
-
-
