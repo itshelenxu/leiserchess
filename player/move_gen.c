@@ -188,7 +188,8 @@ square_t next_piece(position_t *p, square_t current, king_ori_t dir) {
 // Piece orientation strings
 // -----------------------------------------------------------------------------
 
-// King orientations
+
+/*// King orientations
 char *king_ori_to_rep[2][NUM_ORI] = { {"NN", "EE", "SS", "WW"},
 {"nn", "ee", "ss", "ww"}
 };
@@ -197,7 +198,7 @@ char *king_ori_to_rep[2][NUM_ORI] = { {"NN", "EE", "SS", "WW"},
 char *pawn_ori_to_rep[2][NUM_ORI] = { {"NW", "NE", "SE", "SW"},
 {"nw", "ne", "se", "sw"}
 };
-
+*/
 char *nesw_to_str[NUM_ORI] = { "north", "east", "south", "west" };
 
 // -----------------------------------------------------------------------------

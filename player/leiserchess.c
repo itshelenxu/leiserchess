@@ -1,4 +1,7 @@
 // Copyright (c) 2015 MIT License by 6.172 Staff
+#ifdef PROFILE
+#include <gperftools/profiler.h>
+#endif
 
 #include <ctype.h>
 #include <pthread.h>
@@ -443,6 +446,9 @@ int main(int argc, char *argv[]) {
       }
 
       if (strcmp(tok[0], "quit") == 0) {
+        #ifdef PROFILE
+        ProfilerStop();
+        #endif
         break;
       }
 
@@ -650,6 +656,10 @@ int main(int argc, char *argv[]) {
       }
 
       if (strcmp(tok[0], "go") == 0) {
+        #ifdef PROFILE
+        ProfilerStart("profile.data");
+        #endif
+
         double tme = 0.0;
         double inc = 0.0;
         int    depth = INF_DEPTH;

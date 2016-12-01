@@ -1,6 +1,7 @@
 CC = clang
 TARGET := leiserchess
-SRC := util.c tt.c fen.c move_gen.c search.c eval.c
+# SRC := util.c tt.c fen.c move_gen.c search.c eval.c
+SRC := combine.c
 OBJ := $(SRC:.c=.o)
 UNAME := $(shell uname)
 
@@ -33,13 +34,19 @@ else
 	CFLAGS += -O3 -fdetach -DNDEBUG $(PFLAG)
 endif
 
+LDFLAGS= -Wall -lm -lrt -ldl -lpthread -lcilkrts
+ifeq ($(PROFILE), 1)
+	CFLAGS += -DPROFILE
+	LDFLAGS += -lprofiler
+endif
+
+
 ifeq ($(REFERENCE),1)
 	CFLAGS += -DRUN_REFERENCE_CODE=1
 endif
 
 CFLAGS += $(OTHER_CFLAGS)
 
-LDFLAGS= -Wall -lm -lrt -ldl -lpthread -lcilkrts
 
 .PHONY : default clean
 
