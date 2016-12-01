@@ -724,17 +724,14 @@ void low_level_make_move(position_t * old, position_t * p, move_t mv) {
   WHEN_DEBUG_VERBOSE(char buf[MAX_CHARS_IN_MOVE]);
   WHEN_DEBUG_VERBOSE( {
                      move_to_str(mv, buf, MAX_CHARS_IN_MOVE);
-                     DEBUG_LOG(1, "low_level_make_move: %s\n", buf);
-                     });
+                     DEBUG_LOG(1, "low_level_make_move: %s\n", buf);});
 
   tbassert(old->key == compute_zob_key(old),
            "old->key: %" PRIu64 ", zob-key: %" PRIu64 "\n",
            old->key, compute_zob_key(old));
 
   WHEN_DEBUG_VERBOSE( {
-                     fprintf(stderr, "Before:\n");
-                     display(old);
-                     });
+                     fprintf(stderr, "Before:\n"); display(old);});
 
   square_t from_sq = from_square(mv);
   square_t to_sq = to_square(mv);
@@ -745,8 +742,7 @@ void low_level_make_move(position_t * old, position_t * p, move_t mv) {
                      square_to_str(from_sq, buf, MAX_CHARS_IN_MOVE);
                      DEBUG_LOG(1, "from_sq: %s\n", buf);
                      square_to_str(to_sq, buf, MAX_CHARS_IN_MOVE);
-                     DEBUG_LOG(1, "to_sq: %s\n", buf);
-                     switch (rot) {
+                     DEBUG_LOG(1, "to_sq: %s\n", buf); switch (rot) {
 case NONE:
 DEBUG_LOG(1, "rot: none\n"); break; case RIGHT:
 DEBUG_LOG(1, "rot: R\n"); break; case UTURN:
@@ -882,9 +878,7 @@ DEBUG_LOG(1, "rot: L\n"); break; default:
            p->key, compute_zob_key(p));
 
   WHEN_DEBUG_VERBOSE( {
-                     fprintf(stderr, "After:\n");
-                     display(p);
-                     }
+                     fprintf(stderr, "After:\n"); display(p);}
   );
 }
 
@@ -905,8 +899,7 @@ victims_t make_move(position_t * old, position_t * p, move_t mv) {
   while ((victim_sq = fire_laser(p, color_to_move))) {
     WHEN_DEBUG_VERBOSE( {
                        square_to_str(victim_sq, buf, MAX_CHARS_IN_MOVE);
-                       DEBUG_LOG(1, "Zapping piece on %s\n", buf);
-                       }
+                       DEBUG_LOG(1, "Zapping piece on %s\n", buf);}
     );
 
     // we definitely hit something with laser, remove it from board
@@ -941,8 +934,7 @@ victims_t make_move(position_t * old, position_t * p, move_t mv) {
 
     WHEN_DEBUG_VERBOSE( {
                        square_to_str(victim_sq, buf, MAX_CHARS_IN_MOVE);
-                       DEBUG_LOG(1, "Zapped piece on %s\n", buf);
-                       }
+                       DEBUG_LOG(1, "Zapped piece on %s\n", buf);}
     );
 
     // laser halts on king
