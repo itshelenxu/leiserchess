@@ -93,7 +93,8 @@ static score_t scout_search(searchNode * node, int depth,
   bool cutoff = false;
   // TODO: experiment with sorting at each iteration vs all at the beginning
   // Sort the move list.
-  sort_incremental(move_list, num_of_moves, number_of_moves_evaluated);
+
+  sort_best_moves(move_list, num_of_moves, YOUNG_SIBLINGS_WAIT);
 
   // older siblings first in serial
   for (int mv_index = 0; mv_index < YOUNG_SIBLINGS_WAIT; mv_index++) {
@@ -128,6 +129,8 @@ static score_t scout_search(searchNode * node, int depth,
     }
   }
 
+  sort_incremental(move_list + YOUNG_SIBLINGS_WAIT, 
+                   num_of_moves - YOUNG_SIBLINGS_WAIT, num_of_moves - YOUNG_SIBLINGS_WAIT);
   if (!cutoff) {
     // parallel part
     cilk_for(int mv_index = YOUNG_SIBLINGS_WAIT;
@@ -161,11 +164,14 @@ static score_t scout_search(searchNode * node, int depth,
           __sync_fetch_and_add(&(node->legal_move_count), 1);
         }
 
-        simple_acquire(&node_mutex);
-        // process the score. Note that this mutates fields in node.
-        bool local_cutoff =
-          search_process_score(node, mv, local_index, &result, SEARCH_SCOUT);
-        simple_release(&node_mutex);
+        bool local_cutoff = false;
+        if (result.score > node->best_score) {
+          simple_acquire(&node_mutex);
+          // process the score. Note that this mutates fields in node.
+          local_cutoff =
+            search_process_score(node, mv, local_index, &result, SEARCH_SCOUT);
+          simple_release(&node_mutex);
+        }
 
         if (local_cutoff) {
           node->abort = true;

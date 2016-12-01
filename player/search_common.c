@@ -384,6 +384,28 @@ void sort_incremental(sortable_move_t *move_list, int num_of_moves, int mv_index
   }
 }
 
+// put the best m moves in move_list in the front of move_list and in decreasing order  
+void sort_best_moves(sortable_move_t *move_list, int num_of_moves, int m) {
+  tbassert(m <= num_of_moves, "Error, m is more than num_of_moves");
+  sortable_move_t temp, best_move;
+  int best_move_index;
+  for (int i = 0; i < m; i++) {
+    best_move_index = i;
+    best_move = move_list[i];
+    for (int j = i + 1; j < num_of_moves; j++) {
+      if (move_list[j] > best_move) {
+        best_move_index = j;
+        best_move = move_list[j];
+      }
+    }
+    if (best_move_index > i) {
+      temp = move_list[i];
+      move_list[i] = best_move;
+      move_list[best_move_index] = temp;
+    }
+  }
+}
+
 // Returns true if a cutoff was triggered, false otherwise.
 bool search_process_score(searchNode *node, move_t mv, int mv_index,
                                 moveEvaluationResult *result, searchType_t type) {
