@@ -107,9 +107,9 @@ static score_t scout_search(searchNode * node, int depth,
     // increase node count
     __sync_fetch_and_add(node_count_serial, 1);
 
-    moveEvaluationResult result = evaluateMove(node, mv, killer_a, killer_b,
-                                               SEARCH_SCOUT,
-                                               node_count_serial);
+    moveEvaluationResult result;
+    evaluateMove(node, mv, killer_a, killer_b,
+                 SEARCH_SCOUT, node_count_serial, &result);
 
     if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
         || abortf || parallel_parent_aborted(node)) {
@@ -123,7 +123,6 @@ static score_t scout_search(searchNode * node, int depth,
     cutoff = search_process_score(node, mv, local_index, &result, SEARCH_SCOUT);
 
     if (cutoff) {
-      // printf("cutoff\n");
       node->abort = true;
       break;
     }
@@ -131,10 +130,11 @@ static score_t scout_search(searchNode * node, int depth,
 
   sort_incremental(move_list + YOUNG_SIBLINGS_WAIT, 
                    num_of_moves - YOUNG_SIBLINGS_WAIT, num_of_moves - YOUNG_SIBLINGS_WAIT);
+  
+  // if not cutoff, do the rest in parallel
   if (!cutoff) {
-    // parallel part
-    cilk_for(int mv_index = YOUNG_SIBLINGS_WAIT;
-             mv_index < num_of_moves; mv_index++) {
+    cilk_for(int mv_index = YOUNG_SIBLINGS_WAIT; mv_index < num_of_moves;
+             mv_index++) {
       do {
         if (node->abort)
           continue;
@@ -149,9 +149,10 @@ static score_t scout_search(searchNode * node, int depth,
         // increase node count
         __sync_fetch_and_add(node_count_serial, 1);
 
-        moveEvaluationResult result = evaluateMove(node, mv, killer_a, killer_b,
-                                                   SEARCH_SCOUT,
-                                                   node_count_serial);
+        moveEvaluationResult result;
+        evaluateMove(node, mv, killer_a, killer_b,
+                     SEARCH_SCOUT, node_count_serial, &result);
+
 
         if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
             || abortf || parallel_parent_aborted(node)) {
