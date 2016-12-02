@@ -136,6 +136,7 @@ static score_t scout_search(searchNode * node, int depth,
     }
   }
 
+
   if (!cutoff) {
     sort_incremental(move_list + critical_moves, 
                      num_of_moves - critical_moves, num_of_moves - critical_moves);
