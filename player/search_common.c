@@ -337,6 +337,12 @@ void evaluateMoveNew(searchNode *node, move_t mv, move_t killer_a,
 
   result->type = MOVE_EVALUATED;
   int search_depth = ext + node->depth - 1;
+  tbassert(result->type == MOVE_EVALUATED, "type is not MOVE_EVALUATED\n");
+  int local_legal_moves = node->legal_move_count; 
+  // update legal_move_count and release the lock
+  __sync_fetch_and_add(&(node->legal_move_count), 1);
+  simple_release(mutex);
+
 
   // Check if we need to perform a reduced-depth search.
   //
@@ -348,7 +354,7 @@ void evaluateMoveNew(searchNode *node, move_t mv, move_t killer_a,
                                             node_count_serial);
     if (reduced_depth_score < node->beta) {
       result->score = reduced_depth_score;
-      simple_release(mutex);
+      // simple_release(mutex);
       return;
     }
     search_depth += next_reduction;
@@ -358,15 +364,9 @@ void evaluateMoveNew(searchNode *node, move_t mv, move_t killer_a,
   if (abortf) {
     result->score = 0;
     result->type = MOVE_IGNORE;
-    simple_release(mutex);
+    // simple_release(mutex);
     return;
   }
-
-  tbassert(result->type == MOVE_EVALUATED, "type is not MOVE_EVALUATED\n");
-  int local_legal_moves = node->legal_move_count; 
-  // update legal_move_count and release the lock
-  __sync_fetch_and_add(&(node->legal_move_count), 1);
-  simple_release(mutex);
 
   // further searching  
   if (type == SEARCH_SCOUT) {
@@ -469,6 +469,10 @@ void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
   result->type = MOVE_EVALUATED;
   int search_depth = ext + node->depth - 1;
 
+  int local_move_count = node->legal_move_count;
+  node->legal_move_count++;
+
+
   // Check if we need to perform a reduced-depth search.
   //
   // After a reduced-depth search, a full-depth search will be performed if the
@@ -490,9 +494,6 @@ void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
     result->type = MOVE_IGNORE;
     return;
   }
-  int local_move_count = node->legal_move_count;
-  node->legal_move_count++;
-
   if (type == SEARCH_SCOUT) {
     result->score = -scout_search(&(result->next_node), search_depth,
                                  node_count_serial);

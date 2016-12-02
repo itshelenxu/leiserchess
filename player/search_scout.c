@@ -9,7 +9,7 @@
 #include "./tbassert.h"
 #include "./simple_mutex.h"
 
-#define YOUNG_SIBLINGS_WAIT 5
+#define YOUNG_SIBLINGS_WAIT 50000
 
 // Checks whether a node's parent has aborted.
 //   If this occurs, we should just stop and return 0 immediately.
@@ -94,9 +94,11 @@ static score_t scout_search(searchNode * node, int depth,
   // TODO: experiment with sorting at each iteration vs all at the beginning
   // Sort the move list.
   sort_incremental(move_list, num_of_moves, number_of_moves_evaluated);
+  // if (num_of_moves <= 5) printf("Very few moves!\n");
 
   // older siblings first in serial
-  for (int mv_index = 0; mv_index < YOUNG_SIBLINGS_WAIT; mv_index++) {
+  for (int mv_index = 0; mv_index < num_of_moves; mv_index++) {
+    if (number_of_moves_evaluated > 5) break;
     // Get the next move from the move list.
     int local_index = number_of_moves_evaluated++;
     move_t mv = get_move(move_list[local_index]);
@@ -106,6 +108,7 @@ static score_t scout_search(searchNode * node, int depth,
     // increase node count
     __sync_fetch_and_add(node_count_serial, 1);
 
+    // serial evaluation
     moveEvaluationResult result;
     evaluateMove(node, mv, killer_a, killer_b,
                  SEARCH_SCOUT, node_count_serial, &result);
@@ -127,9 +130,15 @@ static score_t scout_search(searchNode * node, int depth,
   simple_mutex_t LMR_mutex;
   init_simple_mutex(&LMR_mutex);
 
+  int start_index = num_of_moves;
+
+  if (!cutoff) {
+    start_index = number_of_moves_evaluated;
+  }
+
   // if not cutoff, do the rest in parallel
   if (!cutoff) {
-    cilk_for(int mv_index = YOUNG_SIBLINGS_WAIT; mv_index < num_of_moves;
+    cilk_for(int mv_index = start_index; mv_index < num_of_moves;
              mv_index++) {
       do {
         if (node->abort)
@@ -137,15 +146,14 @@ static score_t scout_search(searchNode * node, int depth,
 
         simple_acquire(&LMR_mutex);
         // Get the next move from the move list.
-        int local_index = __sync_fetch_and_add(&number_of_moves_evaluated, 1);
+        int local_index = number_of_moves_evaluated++;
+        // int local_index = __sync_fetch_and_add(&number_of_moves_evaluated, 1);
         move_t mv = get_move(move_list[local_index]);
 
         if (TRACE_MOVES) {
           print_move_info(mv, node->ply);
         }
 
-        // node_count_serial++;
-        // increase node count
         __sync_fetch_and_add(node_count_serial, 1);
 
         moveEvaluationResult result;
