@@ -127,13 +127,13 @@ static score_t scout_search(searchNode * node, int depth,
       break;
     }
   }
-
-  sort_incremental(move_list + YOUNG_SIBLINGS_WAIT, 
-                   num_of_moves - YOUNG_SIBLINGS_WAIT, num_of_moves - YOUNG_SIBLINGS_WAIT);
-  
   // if not cutoff, do the rest in parallel
   if (!cutoff) {
-    cilk_for(int mv_index = YOUNG_SIBLINGS_WAIT; mv_index < num_of_moves;
+ 
+    sort_incremental(move_list + YOUNG_SIBLINGS_WAIT, 
+                   num_of_moves - YOUNG_SIBLINGS_WAIT, num_of_moves - YOUNG_SIBLINGS_WAIT);
+  
+   cilk_for(int mv_index = YOUNG_SIBLINGS_WAIT; mv_index < num_of_moves;
              mv_index++) {
       do {
         if (node->abort)

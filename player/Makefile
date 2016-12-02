@@ -12,7 +12,7 @@ ifeq ($(PARALLEL),1)
 	#
 	# switch -fdetach to -ftapir to enable Tapir optimization passes for better
 	# performance.
-	CFLAGS := -std=gnu99 -Wall -g -fdetach
+	CFLAGS := -std=gnu99 -Wall -g -ftapir #-fdetach
 	LDFLAGS= -Wall -lm -lrt -ldl -lpthread -lcilkrts
 else
 ifeq ($(UNAME),Darwin)
@@ -31,7 +31,7 @@ endif
 ifeq ($(DEBUG),1)
 	CFLAGS += -O0 -DDEBUG $(PFLAG)
 else
-	CFLAGS += -O3 -fdetach -DNDEBUG $(PFLAG)
+	CFLAGS += -O3 -DNDEBUG $(PFLAG) #-fdetach
 endif
 
 LDFLAGS= -Wall -lm -lrt -ldl -lpthread -lcilkrts
