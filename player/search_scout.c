@@ -9,7 +9,7 @@
 #include "./tbassert.h"
 #include "./simple_mutex.h"
 
-#define YOUNG_SIBLINGS_WAIT 5
+#define YOUNG_SIBLINGS_WAIT 1
 
 // Checks whether a node's parent has aborted.
 //   If this occurs, we should just stop and return 0 immediately.
