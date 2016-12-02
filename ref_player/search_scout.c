@@ -105,9 +105,10 @@ static score_t scout_search(searchNode *node, int depth,
     // increase node count
     __sync_fetch_and_add(node_count_serial, 1);
 
-    moveEvaluationResult result = evaluateMove(node, mv, killer_a, killer_b,
+    moveEvaluationResult result;
+    result = evaluateMove(node, mv, killer_a, killer_b,
                                                SEARCH_SCOUT,
-                                               node_count_serial);
+                                               node_count_serial, true);
 
     if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
         || abortf || parallel_parent_aborted(node)) {
@@ -116,9 +117,6 @@ static score_t scout_search(searchNode *node, int depth,
 
     // A legal move is a move that's not KO, but when we are in quiescence
     // we only want to count moves that has a capture.
-    if (result.type == MOVE_EVALUATED) {
-      node->legal_move_count++;
-    }
 
     // process the score. Note that this mutates fields in node.
     bool cutoff = search_process_score(node, mv, local_index, &result, SEARCH_SCOUT);
