@@ -363,14 +363,17 @@ void evaluateMoveNew(searchNode *node, move_t mv, move_t killer_a,
   }
 
   tbassert(result->type == MOVE_EVALUATED, "type is not MOVE_EVALUATED\n");
+  int local_legal_moves = node->legal_move_count; 
+  // update legal_move_count and release the lock
   __sync_fetch_and_add(&(node->legal_move_count), 1);
   simple_release(mutex);
-  
+
+  // further searching  
   if (type == SEARCH_SCOUT) {
     result->score = -scout_search(&(result->next_node), search_depth,
                                  node_count_serial);
   } else {
-    if (node->legal_move_count == 0 || node->quiescence) {
+    if (local_legal_moves == 0 || node->quiescence) {
       result->score = -searchPV(&(result->next_node), search_depth, node_count_serial);
     } else {
       result->score = -scout_search(&(result->next_node), search_depth,
@@ -487,13 +490,14 @@ void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
     result->type = MOVE_IGNORE;
     return;
   }
-
+  int local_move_count = node->legal_move_count;
+  node->legal_move_count++;
 
   if (type == SEARCH_SCOUT) {
     result->score = -scout_search(&(result->next_node), search_depth,
                                  node_count_serial);
   } else {
-    if (node->legal_move_count == 0 || node->quiescence) {
+    if (local_move_count == 0 || node->quiescence) {
       result->score = -searchPV(&(result->next_node), search_depth, node_count_serial);
     } else {
       result->score = -scout_search(&(result->next_node), search_depth,

@@ -114,10 +114,6 @@ static score_t scout_search(searchNode * node, int depth,
         || abortf || parallel_parent_aborted(node)) {
       continue;
     }
-    // we only want to count moves that has a capture.
-    if (result.type == MOVE_EVALUATED) {
-      node->legal_move_count++;
-    }
 
     cutoff = search_process_score(node, mv, local_index, &result, SEARCH_SCOUT);
 
@@ -127,6 +123,7 @@ static score_t scout_search(searchNode * node, int depth,
     }
   }
 
+  // keep legal_move_count up to date
   simple_mutex_t LMR_mutex;
   init_simple_mutex(&LMR_mutex);
 
@@ -146,28 +143,27 @@ static score_t scout_search(searchNode * node, int depth,
         if (TRACE_MOVES) {
           print_move_info(mv, node->ply);
         }
+
+        // node_count_serial++;
         // increase node count
         __sync_fetch_and_add(node_count_serial, 1);
 
         moveEvaluationResult result;
         evaluateMoveNew(node, mv, killer_a, killer_b,
                      SEARCH_SCOUT, node_count_serial, &result, &LMR_mutex);
+
+        // we unlock the mutex in evaluateMove
         tbassert(LMR_mutex == 0, "LMR mutex not unlocked\n");
 
         if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
             || abortf || parallel_parent_aborted(node)) {
           continue;
         }
+
         // A legal move is a move that's not KO, but when we are in quiescence
         // we only want to count moves that has a capture.
-        /*
-        if (result.type == MOVE_EVALUATED) {
-          __sync_fetch_and_add(&(node->legal_move_count), 1);
-        }
-        */
-        // simple_release(&LMR_mutex);
-
         simple_acquire(&node_mutex);
+
         // process the score. Note that this mutates fields in node.
         bool local_cutoff =
           search_process_score(node, mv, local_index, &result, SEARCH_SCOUT);
