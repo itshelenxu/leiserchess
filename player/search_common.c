@@ -510,6 +510,7 @@ void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
   }
   return;
 }
+
 // Incremental sort of the move list.
 void sort_incremental(sortable_move_t *move_list, int num_of_moves, int mv_index) {
   for (int j = 0; j < num_of_moves; j++) {
@@ -594,19 +595,33 @@ static int get_sortable_move_list(searchNode *node, sortable_move_t * move_list,
   int num_of_moves = generate_all(&(node->position), move_list, false);
 
   color_t fake_color_to_move = color_to_move_of(&(node->position));
+  int critical_moves = 0;
 
   move_t killer_a = killer[KMT(node->ply, 0)];
   move_t killer_b = killer[KMT(node->ply, 1)];
 
+  sortable_move_t temp;
   // sort special moves to the front
   for (int mv_index = 0; mv_index < num_of_moves; mv_index++) {
     move_t mv = get_move(move_list[mv_index]);
     if (mv == hash_table_move) {
       set_sort_key(&move_list[mv_index], SORT_MASK);
+      temp = move_list[critical_moves];
+      move_list[critical_moves] = move_list[mv_index];
+      move_list[mv_index] = temp;
+      critical_moves++;
     } else if (mv == killer_a) {
       set_sort_key(&move_list[mv_index], SORT_MASK - 1);
+      temp = move_list[critical_moves];
+      move_list[critical_moves] = move_list[mv_index];
+      move_list[mv_index] = temp;
+      critical_moves++;
     } else if (mv == killer_b) {
       set_sort_key(&move_list[mv_index], SORT_MASK - 2);
+      temp = move_list[critical_moves];
+      move_list[critical_moves] = move_list[mv_index];
+      move_list[mv_index] = temp;
+      critical_moves++;
     } else {
       ptype_t  pce = ptype_mv_of(mv);
       rot_t    ro  = rot_of(mv);   // rotation
@@ -617,6 +632,9 @@ static int get_sortable_move_list(searchNode *node, sortable_move_t * move_list,
                    best_move_history[BMH(fake_color_to_move, pce, ts, ot)]);
     }
   }
+  sort_incremental(move_list, critical_moves, critical_moves);
+  move_list[num_of_moves] = critical_moves;
+
   return num_of_moves;
 }
 
