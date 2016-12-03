@@ -250,7 +250,7 @@ leafEvalResult evaluate_as_leaf(searchNode *node, searchType_t type) {
 // Evaluate the move by performing a search.
 moveEvaluationResult evaluateMove(searchNode *node, move_t mv, move_t killer_a,
                                   move_t killer_b, searchType_t type,
-                                  uint64_t *node_count_serial, bool inc) {
+                                  uint64_t *node_count_serial) {
   int ext = 0;  // extensions
   bool blunder = false;  // shoot our own piece
   moveEvaluationResult result;
@@ -352,16 +352,12 @@ moveEvaluationResult evaluateMove(searchNode *node, move_t mv, move_t killer_a,
     return result;
   }
 
-  int local_legal_move_count = node->legal_move_count;
-
-  // get reference numbers for this change
-  node->legal_move_count++;
 
   if (type == SEARCH_SCOUT) {
     result.score = -scout_search(&(result.next_node), search_depth,
                                  node_count_serial);
   } else {
-    if (local_legal_move_count == 0 || node->quiescence) {
+    if (node->legal_move_count == 0 || node->quiescence) {
       result.score = -searchPV(&(result.next_node), search_depth, node_count_serial);
     } else {
       result.score = -scout_search(&(result.next_node), search_depth,
