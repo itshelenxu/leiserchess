@@ -95,9 +95,12 @@ static score_t scout_search(searchNode * node, int depth,
   // Sort the move list.
 
   sort_best_moves(move_list, num_of_moves, YOUNG_SIBLINGS_WAIT);
+  // if (num_of_moves <= 5) printf("Very few moves!\n");
 
   // older siblings first in serial
-  for (int mv_index = 0; mv_index < YOUNG_SIBLINGS_WAIT; mv_index++) {
+  for (int mv_index = 0; mv_index < num_of_moves; mv_index++) {
+    if (number_of_moves_evaluated > 5)
+      break;
     // Get the next move from the move list.
     int local_index = number_of_moves_evaluated++;
     move_t mv = get_move(move_list[local_index]);
@@ -107,6 +110,7 @@ static score_t scout_search(searchNode * node, int depth,
     // increase node count
     __sync_fetch_and_add(node_count_serial, 1);
 
+    // serial evaluation
     moveEvaluationResult result;
     evaluateMove(node, mv, killer_a, killer_b,
                  SEARCH_SCOUT, node_count_serial, &result);
@@ -114,10 +118,6 @@ static score_t scout_search(searchNode * node, int depth,
     if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
         || abortf || parallel_parent_aborted(node)) {
       continue;
-    }
-    // we only want to count moves that has a capture.
-    if (result.type == MOVE_EVALUATED) {
-      node->legal_move_count++;
     }
 
     cutoff = search_process_score(node, mv, local_index, &result, SEARCH_SCOUT);
@@ -127,58 +127,67 @@ static score_t scout_search(searchNode * node, int depth,
       break;
     }
   }
+
+  // keep legal_move_count up to date
+  simple_mutex_t LMR_mutex;
+  init_simple_mutex(&LMR_mutex);
+
+  int start_index = num_of_moves;
+
+  if (!cutoff) {
+    start_index = number_of_moves_evaluated;
+  }
   // if not cutoff, do the rest in parallel
   if (!cutoff) {
- 
-    sort_incremental(move_list + YOUNG_SIBLINGS_WAIT, 
-                   num_of_moves - YOUNG_SIBLINGS_WAIT, num_of_moves - YOUNG_SIBLINGS_WAIT);
-  
-   cilk_for(int mv_index = YOUNG_SIBLINGS_WAIT; mv_index < num_of_moves;
-             mv_index++) {
-      do {
-        if (node->abort)
-          continue;
 
-        // Get the next move from the move list.
-        int local_index = __sync_fetch_and_add(&number_of_moves_evaluated, 1);
-        move_t mv = get_move(move_list[local_index]);
+    sort_incremental(move_list + start_index,
+                     num_of_moves - start_index, num_of_moves - start_index);
+    // if not cutoff, do the rest in parallel
+    if (!cutoff) {
+      cilk_for(int mv_index = start_index; mv_index < num_of_moves;
+               mv_index++) {
+        do {
+          if (node->abort)
+            continue;
 
-        if (TRACE_MOVES) {
-          print_move_info(mv, node->ply);
-        }
-        // increase node count
-        __sync_fetch_and_add(node_count_serial, 1);
+          simple_acquire(&LMR_mutex);
+          // Get the next move from the move list.
+          int local_index = number_of_moves_evaluated++;
+          // int local_index = __sync_fetch_and_add(&number_of_moves_evaluated, 1);
+          move_t mv = get_move(move_list[local_index]);
 
-        moveEvaluationResult result;
-        evaluateMove(node, mv, killer_a, killer_b,
-                     SEARCH_SCOUT, node_count_serial, &result);
+          if (TRACE_MOVES) {
+            print_move_info(mv, node->ply);
+          }
 
+          __sync_fetch_and_add(node_count_serial, 1);
 
-        if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
-            || abortf || parallel_parent_aborted(node)) {
-          continue;
-        }
-        // A legal move is a move that's not KO, but when we are in quiescence
-        // we only want to count moves that has a capture.
-        if (result.type == MOVE_EVALUATED) {
-          // node->legal_move_count++;
-          __sync_fetch_and_add(&(node->legal_move_count), 1);
-        }
+          moveEvaluationResult result;
+          evaluateMoveNew(node, mv, killer_a, killer_b,
+                          SEARCH_SCOUT, node_count_serial, &result, &LMR_mutex);
 
-        bool local_cutoff = false;
-        if (result.score > node->best_score) {
+          // we unlock the mutex in evaluateMove
+          tbassert(LMR_mutex == 0, "LMR mutex not unlocked\n");
+
+          if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
+              || abortf || parallel_parent_aborted(node)) {
+            continue;
+          }
+
           simple_acquire(&node_mutex);
+
           // process the score. Note that this mutates fields in node.
-          local_cutoff =
+          bool local_cutoff =
             search_process_score(node, mv, local_index, &result, SEARCH_SCOUT);
           simple_release(&node_mutex);
-        }
 
-        if (local_cutoff) {
-          node->abort = true;
-          continue;
-        }
-      } while (false);
+
+          if (local_cutoff) {
+            node->abort = true;
+            continue;
+          }
+        } while (false);
+      }
     }
   }
 

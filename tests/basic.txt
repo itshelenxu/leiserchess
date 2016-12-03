@@ -1,16 +1,16 @@
-cpus = 2
+cpus = 12
 book = ../tests/book.dta
-game_rounds = 5
-title = basic
+game_rounds = 1000
+title = Parallel
 adjudicate = 400
 
 # now we have the player definitions
 # --
 
-player = player_1
+player = parallel
 invoke = ../player/leiserchess
 fis = 60 0.5
 
-player = player_2
-invoke = ../player/leiserchess
+player = reference
+invoke = ../ref_player/leiserchess
 fis = 60 0.5
