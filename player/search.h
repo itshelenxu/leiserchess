@@ -17,23 +17,6 @@
 // the maximum possible value for score_t type
 #define MAX_SCORE_VAL INT16_MAX
 
-
-/*//// Killer moves table and lookup function
-//
-#define __KMT_dim__ [MAX_PLY_IN_SEARCH][4]  // NOLINT(whitespace/braces)
-#define KMT(ply, id) (4 * ply + id)
-static move_t killer_reference __KMT_dim__;  // up to 4 killers
-
-// Best move history table and lookup function
-// Format: best_move_history[color_t][piece_t][square_t][orientation]
-#define __BMH_dim__ [2][6][ARR_SIZE][NUM_ORI]  // NOLINT(whitespace/braces)
-#define BMH(color, piece, square, ori)                             \
-    (color * 6 * ARR_SIZE * NUM_ORI + piece * ARR_SIZE * NUM_ORI + \
-     square * NUM_ORI + ori)
-
-static int best_move_history_reference __BMH_dim__;
-*/
-
 typedef int16_t score_t;  // Search uses "low res" values
 
 // Main search routines and helper functions

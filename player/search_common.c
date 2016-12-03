@@ -1,5 +1,6 @@
 // Copyright (c) 2015 MIT License by 6.172 Staff
 #include "simple_mutex.h"
+#include <cilk/cilk.h>
 
 // tic counter for how often we should check for abort
 static int     tics = 0;
@@ -565,6 +566,8 @@ bool search_process_score(searchNode *node, move_t mv, int mv_index,
 
     if (result->score >= node->beta) {
       if (mv != killer[KMT(node->ply, 0)] && ENABLE_TABLES) {
+        killer[KMT(node->ply, 3)] = killer[KMT(node->ply, 2)];
+        killer[KMT(node->ply, 2)] = killer[KMT(node->ply, 1)];
         killer[KMT(node->ply, 1)] = killer[KMT(node->ply, 0)];
         killer[KMT(node->ply, 0)] = mv;
       }

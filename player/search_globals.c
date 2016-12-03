@@ -6,9 +6,11 @@
 // https://chessprogramming.wikispaces.com/Killer+Heuristic
 //
 // FORMAT: killer[ply][id]
+#include <cilk/cilk.h>
+
 #define __KMT_dim__ [MAX_PLY_IN_SEARCH*4]  // NOLINT(whitespace/braces)
 #define KMT(ply, id) (4 * ply + id)
-static move_t killer __KMT_dim__;  // up to 4 killers
+static __thread move_t killer __KMT_dim__;  // up to 4 killers
 
 // Best move history table and lookup function
 //
