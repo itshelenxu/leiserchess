@@ -249,7 +249,7 @@ leafEvalResult evaluate_as_leaf(searchNode *node, searchType_t type) {
   return result;
 }
 
-void evaluateMoveNew(searchNode *node, move_t mv, move_t killer_a,
+void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
                                   move_t killer_b, searchType_t type,
                                   uint64_t *node_count_serial,
                                   moveEvaluationResult *result,
@@ -269,7 +269,7 @@ void evaluateMoveNew(searchNode *node, move_t mv, move_t killer_a,
   // illegal).
   if (is_KO(victims)) {
     result->type = MOVE_ILLEGAL;
-    simple_release(mutex);
+    if ( mutex ) { simple_release(mutex); }
     return;
   }
 
@@ -278,14 +278,14 @@ void evaluateMoveNew(searchNode *node, move_t mv, move_t killer_a,
     // Compute the end-game score.
     result->type = MOVE_GAMEOVER;
     result->score = get_game_over_score(victims, node->pov, node->ply);
-    simple_release(mutex);
+    if ( mutex ) { simple_release(mutex); }
     return;
   }
 
   // Ignore noncapture moves when in quiescence.
   if (zero_victims(victims) && node->quiescence) {
     result->type = MOVE_IGNORE;
-    simple_release(mutex);
+    if ( mutex ) { simple_release(mutex); }
     return;
   }
 
@@ -293,7 +293,7 @@ void evaluateMoveNew(searchNode *node, move_t mv, move_t killer_a,
   if (is_repeated(&(result->next_node.position), node->ply)) {
     result->type = MOVE_GAMEOVER;
     result->score = get_draw_score(&(result->next_node.position), node->ply);
-    simple_release(mutex);
+    if ( mutex ) { simple_release(mutex); }
     return;
   }
 
@@ -311,7 +311,7 @@ void evaluateMoveNew(searchNode *node, move_t mv, move_t killer_a,
   // Do not consider moves that are blunders while in quiescence.
   if (node->quiescence && blunder) {
     result->type = MOVE_IGNORE;
-    simple_release(mutex);
+    if (mutex) { simple_release(mutex); }
     return;
   }
 
@@ -341,8 +341,10 @@ void evaluateMoveNew(searchNode *node, move_t mv, move_t killer_a,
   tbassert(result->type == MOVE_EVALUATED, "type is not MOVE_EVALUATED\n");
   int local_legal_moves = node->legal_move_count; 
   // update legal_move_count and release the lock
-  __sync_fetch_and_add(&(node->legal_move_count), 1);
-  simple_release(mutex);
+  node->legal_move_count++;
+  if ( mutex ) { simple_release(mutex); }
+  // __sync_fetch_and_add(&(node->legal_move_count), 1);
+  // simple_release(mutex);
 
 
   // Check if we need to perform a reduced-depth search.
@@ -355,7 +357,6 @@ void evaluateMoveNew(searchNode *node, move_t mv, move_t killer_a,
                                             node_count_serial);
     if (reduced_depth_score < node->beta) {
       result->score = reduced_depth_score;
-      // simple_release(mutex);
       return;
     }
     search_depth += next_reduction;
@@ -365,7 +366,6 @@ void evaluateMoveNew(searchNode *node, move_t mv, move_t killer_a,
   if (abortf) {
     result->score = 0;
     result->type = MOVE_IGNORE;
-    // simple_release(mutex);
     return;
   }
 
@@ -387,6 +387,7 @@ void evaluateMoveNew(searchNode *node, move_t mv, move_t killer_a,
   return;
 }
 
+/*
 void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
                                   move_t killer_b, searchType_t type,
                                   uint64_t *node_count_serial,
@@ -511,7 +512,7 @@ void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
   }
   return;
 }
-
+*/
 // Incremental sort of the move list.
 void sort_incremental(sortable_move_t *move_list, int num_of_moves, int mv_index) {
   for (int j = 0; j < num_of_moves; j++) {

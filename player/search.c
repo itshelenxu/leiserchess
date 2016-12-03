@@ -157,7 +157,7 @@ static score_t searchPV(searchNode *node, int depth, uint64_t *node_count_serial
     moveEvaluationResult result;
     evaluateMove(node, mv, killer_a, killer_b,
                  SEARCH_PV,
-                 node_count_serial, &result);
+                 node_count_serial, &result, NULL);
 
     if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE) {
       continue;

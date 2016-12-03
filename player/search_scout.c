@@ -116,7 +116,7 @@ static score_t scout_search(searchNode * node, int depth,
     // serial evaluation
     moveEvaluationResult result;
     evaluateMove(node, mv, killer_a, killer_b,
-                 SEARCH_SCOUT, node_count_serial, &result);
+                 SEARCH_SCOUT, node_count_serial, &result, NULL);
     if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
         || abortf || parallel_parent_aborted(node)) {
       continue;
@@ -178,7 +178,7 @@ static score_t scout_search(searchNode * node, int depth,
           __sync_fetch_and_add(node_count_serial, 1);
 
           moveEvaluationResult result;
-          evaluateMoveNew(node, mv, killer_a, killer_b,
+          evaluateMove(node, mv, killer_a, killer_b,
                           SEARCH_SCOUT, node_count_serial, &result, &LMR_mutex);
 
           // we unlock the mutex in evaluateMove
@@ -222,7 +222,7 @@ static score_t scout_search(searchNode * node, int depth,
         moveEvaluationResult result;
         evaluateMove(node, mv, killer_a, killer_b,
                                                    SEARCH_SCOUT,
-                                                   node_count_serial, &result);
+                                                   node_count_serial, &result, NULL);
 
         if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
             || abortf || parallel_parent_aborted(node)) {
