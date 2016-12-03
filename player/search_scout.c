@@ -79,6 +79,8 @@ static score_t scout_search(searchNode * node, int depth,
   // Grab the killer-moves for later use.
   move_t killer_a = killer[KMT(node->ply, 0)];
   move_t killer_b = killer[KMT(node->ply, 1)];
+  move_t killer_c = killer[KMT(node->ply, 2)];
+  move_t killer_d = killer[KMT(node->ply, 3)];
 
   // Store the sorted move list on the stack.
   //   MAX_NUM_MOVES is all that we need.
@@ -115,7 +117,7 @@ static score_t scout_search(searchNode * node, int depth,
 
     // serial evaluation
     moveEvaluationResult result;
-    evaluateMove(node, mv, killer_a, killer_b,
+    evaluateMove(node, mv, killer_a, killer_b, killer_c, killer_d,
                  SEARCH_SCOUT, node_count_serial, &result, NULL);
     if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
         || abortf || parallel_parent_aborted(node)) {
@@ -178,7 +180,7 @@ static score_t scout_search(searchNode * node, int depth,
           __sync_fetch_and_add(node_count_serial, 1);
 
           moveEvaluationResult result;
-          evaluateMove(node, mv, killer_a, killer_b,
+          evaluateMove(node, mv, killer_a, killer_b, killer_c, killer_d,
                           SEARCH_SCOUT, node_count_serial, &result, &LMR_mutex);
 
           // we unlock the mutex in evaluateMove
@@ -220,7 +222,7 @@ static score_t scout_search(searchNode * node, int depth,
         __sync_fetch_and_add(node_count_serial, 1);
 
         moveEvaluationResult result;
-        evaluateMove(node, mv, killer_a, killer_b,
+        evaluateMove(node, mv, killer_a, killer_b, killer_c, killer_d,
                                                    SEARCH_SCOUT,
                                                    node_count_serial, &result, NULL);
 

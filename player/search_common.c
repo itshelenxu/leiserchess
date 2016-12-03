@@ -250,7 +250,8 @@ leafEvalResult evaluate_as_leaf(searchNode *node, searchType_t type) {
 }
 
 void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
-                                  move_t killer_b, searchType_t type,
+                                  move_t killer_b, move_t killer_c,
+                                  move_t killer_d, searchType_t type,
                                   uint64_t *node_count_serial,
                                   moveEvaluationResult *result,
                                   simple_mutex_t* mutex) {
@@ -328,7 +329,7 @@ void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
   // https://chessprogramming.wikispaces.com/Late+Move+Reductions
   int next_reduction = 0;
   if (type == SEARCH_SCOUT && node->legal_move_count + 1 >= LMR_R1 && node->depth > 2 &&
-      zero_victims(victims) && mv != killer_a && mv != killer_b) {
+      zero_victims(victims) && mv != killer_a && mv != killer_b && killer_c && killer_d) {
     if (node->legal_move_count + 1 >= LMR_R2) {
       next_reduction = 2;
     } else {
@@ -387,132 +388,7 @@ void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
   return;
 }
 
-/*
-void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
-                                  move_t killer_b, searchType_t type,
-                                  uint64_t *node_count_serial,
-                                  moveEvaluationResult *result) {
-  int ext = 0;  // extensions
-  bool blunder = false;  // shoot our own piece
-  // moveEvaluationResult result;
-  result->next_node.subpv[0] = 0;
-  result->next_node.parent = node;
 
-  // Make the move, and get any victim pieces.
-  victims_t victims = make_move(&(node->position), &(result->next_node.position),
-                                mv);
-
-  // Check whether this move changes the board state (moves that don't are
-  // illegal).
-  if (is_KO(victims)) {
-    result->type = MOVE_ILLEGAL;
-    return;
-  }
-
-  // Check whether the game is over.
-  if (is_game_over(victims, node->pov, node->ply)) {
-    // Compute the end-game score.
-    result->type = MOVE_GAMEOVER;
-    result->score = get_game_over_score(victims, node->pov, node->ply);
-    return;
-  }
-
-  // Ignore noncapture moves when in quiescence.
-  if (zero_victims(victims) && node->quiescence) {
-    result->type = MOVE_IGNORE;
-    return;
-  }
-
-  // Check whether the board state has been repeated, this results in a draw.
-  if (is_repeated(&(result->next_node.position), node->ply)) {
-    result->type = MOVE_GAMEOVER;
-    result->score = get_draw_score(&(result->next_node.position), node->ply);
-    return;
-  }
-
-  // Check whether we blundered (caused only our own pieces to be zapped).
-  if (victims.zapped_count > 0) {
-    blunder = true;
-    for (int i = 0; i < victims.zapped_count; i++) {
-      if (color_of(victims.zapped[i]) != node->fake_color_to_move) {
-        blunder = false;
-        break;
-      }
-    }
-  }
-
-  // Do not consider moves that are blunders while in quiescence.
-  if (node->quiescence && blunder) {
-    result->type = MOVE_IGNORE;
-    return;
-  }
-
-  // Extend the search-depth by 1 if we captured a piece, since that means the
-  // move was interesting.
-  //
-  // https://chessprogramming.wikispaces.com/Capture+Extensions
-  if (victim_exists(victims) && !blunder) {
-    ext = 1;
-  }
-
-  // Late move reductions - or LMR. Only done in scout search.
-  //
-  // https://chessprogramming.wikispaces.com/Late+Move+Reductions
-  int next_reduction = 0;
-  if (type == SEARCH_SCOUT && node->legal_move_count + 1 >= LMR_R1 && node->depth > 2 &&
-      zero_victims(victims) && mv != killer_a && mv != killer_b) {
-    if (node->legal_move_count + 1 >= LMR_R2) {
-      next_reduction = 2;
-    } else {
-      next_reduction = 1;
-    }
-  }
-
-  result->type = MOVE_EVALUATED;
-  int search_depth = ext + node->depth - 1;
-
-  int local_move_count = node->legal_move_count;
-  node->legal_move_count++;
-
-
-  // Check if we need to perform a reduced-depth search.
-  //
-  // After a reduced-depth search, a full-depth search will be performed if the
-  //  reduced-depth search did not trigger a cut-off.
-  if (next_reduction > 0) {
-    search_depth -= next_reduction;
-    int reduced_depth_score = -scout_search(&(result->next_node), search_depth,
-                                            node_count_serial);
-    if (reduced_depth_score < node->beta) {
-      result->score = reduced_depth_score;
-      return;
-    }
-    search_depth += next_reduction;
-  }
-
-  // Check if we should abort due to time control.
-  if (abortf) {
-    result->score = 0;
-    result->type = MOVE_IGNORE;
-    return;
-  }
-  if (type == SEARCH_SCOUT) {
-    result->score = -scout_search(&(result->next_node), search_depth,
-                                 node_count_serial);
-  } else {
-    if (local_move_count == 0 || node->quiescence) {
-      result->score = -searchPV(&(result->next_node), search_depth, node_count_serial);
-    } else {
-      result->score = -scout_search(&(result->next_node), search_depth,
-                            node_count_serial);
-      if (result->score > node->alpha) {
-        result->score = -searchPV(&(result->next_node), node->depth + ext - 1, node_count_serial);
-      }
-    }
-  }
-  return;
-}
-*/
 // Incremental sort of the move list.
 void sort_incremental(sortable_move_t *move_list, int num_of_moves, int mv_index) {
   for (int j = 0; j < num_of_moves; j++) {

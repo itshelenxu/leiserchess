@@ -121,7 +121,8 @@ static score_t searchPV(searchNode *node, int depth, uint64_t *node_count_serial
   // Get the killer moves at this node.
   move_t killer_a = killer[KMT(node->ply, 0)];
   move_t killer_b = killer[KMT(node->ply, 1)];
-
+  move_t killer_c = killer[KMT(node->ply, 2)];
+  move_t killer_d = killer[KMT(node->ply, 3)];
 
   // sortable_move_t move_list
   //
@@ -155,7 +156,7 @@ static score_t searchPV(searchNode *node, int depth, uint64_t *node_count_serial
     (*node_count_serial)++;
 
     moveEvaluationResult result;
-    evaluateMove(node, mv, killer_a, killer_b,
+    evaluateMove(node, mv, killer_a, killer_b, killer_c, killer_d,
                  SEARCH_PV,
                  node_count_serial, &result, NULL);
 
@@ -165,11 +166,6 @@ static score_t searchPV(searchNode *node, int depth, uint64_t *node_count_serial
 
     // A legal move is a move that's not KO, but when we are in quiescence
     // we only want to count moves that has a capture.
-    /*
-    if (result.type == MOVE_EVALUATED) {
-      node->legal_move_count++;
-    }
-    */
 
     // Check if we should abort due to time control.
     if (abortf) {
