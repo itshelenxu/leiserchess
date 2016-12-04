@@ -123,11 +123,12 @@ static score_t searchPV(searchNode *node, int depth, uint64_t *node_count_serial
   move_t killer_b = killer[KMT(node->ply, 1)];
   move_t killer_c = killer[KMT(node->ply, 2)];
   move_t killer_d = killer[KMT(node->ply, 3)];
+  /*
   move_t killer_e = killer[KMT(node->ply, 4)];
   move_t killer_f = killer[KMT(node->ply, 5)];
   move_t killer_g = killer[KMT(node->ply, 6)];
   move_t killer_h = killer[KMT(node->ply, 7)];
-
+  */
 
   // sortable_move_t move_list
   //
@@ -162,7 +163,7 @@ static score_t searchPV(searchNode *node, int depth, uint64_t *node_count_serial
 
     moveEvaluationResult result;
     evaluateMove(node, mv, killer_a, killer_b, killer_c, killer_d,
-        killer_e, killer_f, killer_g, killer_h,
+        /* killer_e, killer_f, killer_g, killer_h, */
                  SEARCH_PV,
                  node_count_serial, &result, NULL);
 

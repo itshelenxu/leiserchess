@@ -7,7 +7,7 @@
 //
 // FORMAT: killer[ply][id]
 #include <cilk/cilk.h>
-#define KMT_SIZE 8
+#define KMT_SIZE 4
 #define __KMT_dim__ [MAX_PLY_IN_SEARCH*KMT_SIZE]  // NOLINT(whitespace/braces)
 #define KMT(ply, id) (KMT_SIZE * ply + id)
 static __thread move_t killer __KMT_dim__;  // up to 4 killers
