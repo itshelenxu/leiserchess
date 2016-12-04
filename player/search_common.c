@@ -514,14 +514,17 @@ static int get_sortable_move_list(searchNode *node, sortable_move_t * move_list,
       square_t ts  = to_square(mv);
 
       int score = best_move_history[BMH(fake_color_to_move, pce, ts, ot)];
-      if (score < SCORE_THRESHOLD) {
+
+      #ifndef DEBUG
+      if (score == 0) {
         num_of_good_moves--;
         temp2 = move_list[mv_index];
         move_list[mv_index] = move_list[num_of_good_moves];
         move_list[num_of_good_moves] = temp2;
         mv_index--;
-        // continue;
+        continue;
       }
+      #endif
       set_sort_key(&move_list[mv_index], score);
     }
   }
