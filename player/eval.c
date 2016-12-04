@@ -235,7 +235,6 @@ double h_dist(square_t a, square_t b) {
   tbassert(h_dist_table[delta_fil][delta_rnk] ==
            (1.0 / (delta_fil + 1)) + (1.0 / (delta_rnk + 1)), "\n");
   return h_dist_table[delta_fil][delta_rnk];
-  //  printf("max_dist = %d\n\n", x);
 }
 
 // Same as mark_laser_path(), except also computes heuristics.
@@ -435,11 +434,6 @@ int mobility(position_t * p, color_t color) {
   for (int i = 0; i < NUM_SENTINELS; i++) {
     laser_map[edges[i]] = 4;
   }
-  /*
-     for (int i = 0; i < ARR_SIZE; ++i) {
-     laser_map[i] = 4;           // Invalid square
-     }
-   */
 
   for (fil_t f = 0; f < BOARD_WIDTH; ++f) {
     for (rnk_t r = 0; r < BOARD_WIDTH; ++r) {

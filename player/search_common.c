@@ -249,13 +249,12 @@ leafEvalResult evaluate_as_leaf(searchNode *node, searchType_t type) {
   return result;
 }
 
-void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
+extern inline void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
                                   move_t killer_b, move_t killer_c,
                                   move_t killer_d, searchType_t type,
                                   uint64_t *node_count_serial,
                                   moveEvaluationResult *result,
                                   simple_mutex_t* mutex) {
-  // simple_release(mutex);
   int ext = 0;  // extensions
   bool blunder = false;  // shoot our own piece
   // moveEvaluationResult result;
@@ -270,7 +269,7 @@ void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
   // illegal).
   if (is_KO(victims)) {
     result->type = MOVE_ILLEGAL;
-    if ( mutex ) { simple_release(mutex); }
+    if ( mutex ) { __sync_bool_compare_and_swap(mutex, 1, 0); }
     return;
   }
 
@@ -279,14 +278,14 @@ void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
     // Compute the end-game score.
     result->type = MOVE_GAMEOVER;
     result->score = get_game_over_score(victims, node->pov, node->ply);
-    if ( mutex ) { simple_release(mutex); }
+    if ( mutex ) { __sync_bool_compare_and_swap(mutex, 1, 0); }
     return;
   }
 
   // Ignore noncapture moves when in quiescence.
   if (zero_victims(victims) && node->quiescence) {
     result->type = MOVE_IGNORE;
-    if ( mutex ) { simple_release(mutex); }
+    if ( mutex ) { __sync_bool_compare_and_swap(mutex, 1, 0); }
     return;
   }
 
@@ -294,7 +293,7 @@ void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
   if (is_repeated(&(result->next_node.position), node->ply)) {
     result->type = MOVE_GAMEOVER;
     result->score = get_draw_score(&(result->next_node.position), node->ply);
-    if ( mutex ) { simple_release(mutex); }
+    if ( mutex ) { __sync_bool_compare_and_swap(mutex, 1, 0); }
     return;
   }
 
@@ -312,7 +311,7 @@ void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
   // Do not consider moves that are blunders while in quiescence.
   if (node->quiescence && blunder) {
     result->type = MOVE_IGNORE;
-    if (mutex) { simple_release(mutex); }
+    if (mutex) { __sync_bool_compare_and_swap(mutex, 1, 0); }
     return;
   }
 
@@ -329,7 +328,7 @@ void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
   // https://chessprogramming.wikispaces.com/Late+Move+Reductions
   int next_reduction = 0;
   if (type == SEARCH_SCOUT && node->legal_move_count + 1 >= LMR_R1 && node->depth > 2 &&
-      zero_victims(victims) && mv != killer_a && mv != killer_b && killer_c && killer_d) {
+      zero_victims(victims) && mv != killer_a && mv != killer_b && mv != killer_c && mv != killer_d) {
     if (node->legal_move_count + 1 >= LMR_R2) {
       next_reduction = 2;
     } else {
@@ -343,10 +342,7 @@ void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
   int local_legal_moves = node->legal_move_count; 
   // update legal_move_count and release the lock
   node->legal_move_count++;
-  if ( mutex ) { simple_release(mutex); }
-  // __sync_fetch_and_add(&(node->legal_move_count), 1);
-  // simple_release(mutex);
-
+  if ( mutex ) { __sync_bool_compare_and_swap(mutex, 1, 0); }
 
   // Check if we need to perform a reduced-depth search.
   //
@@ -479,6 +475,8 @@ static int get_sortable_move_list(searchNode *node, sortable_move_t * move_list,
 
   move_t killer_a = killer[KMT(node->ply, 0)];
   move_t killer_b = killer[KMT(node->ply, 1)];
+  move_t killer_c = killer[KMT(node->ply, 2)];
+  move_t killer_d = killer[KMT(node->ply, 3)];
 
   sortable_move_t temp;
   // sort special moves to the front
@@ -502,6 +500,18 @@ static int get_sortable_move_list(searchNode *node, sortable_move_t * move_list,
       move_list[critical_moves] = move_list[mv_index];
       move_list[mv_index] = temp;
       critical_moves++;
+    } else if (mv == killer_c) {
+      set_sort_key(&move_list[mv_index], SORT_MASK - 3);
+      temp = move_list[critical_moves];
+      move_list[critical_moves] = move_list[mv_index];
+      move_list[mv_index] = temp;
+      critical_moves++;
+    } else if (mv == killer_d) {
+      set_sort_key(&move_list[mv_index], SORT_MASK - 4);
+      temp = move_list[critical_moves];
+      move_list[critical_moves] = move_list[mv_index];
+      move_list[mv_index] = temp;
+      critical_moves++; 
     } else {
       ptype_t  pce = ptype_mv_of(mv);
       rot_t    ro  = rot_of(mv);   // rotation

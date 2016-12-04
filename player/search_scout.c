@@ -83,7 +83,7 @@ static score_t scout_search(searchNode * node, int depth,
   move_t killer_d = killer[KMT(node->ply, 3)];
 
   // Store the sorted move list on the stack.
-  //   MAX_NUM_MOVES is all that we need.
+  // MAX_NUM_MOVES is all that we need.
   sortable_move_t move_list[MAX_NUM_MOVES];
 
   // Obtain the sorted move list.
@@ -136,23 +136,6 @@ static score_t scout_search(searchNode * node, int depth,
   simple_mutex_t LMR_mutex;
   init_simple_mutex(&LMR_mutex);
 
-  /*
-     int start_index = num_of_moves;
-
-     if (!cutoff) {
-     start_index = number_of_moves_evaluated;
-     }
-     // if not cutoff, do the rest in parallel
-     if (!cutoff) {
-
-     sort_incremental(move_list + start_index,
-     num_of_moves - start_index, num_of_moves - start_index);
-     // if not cutoff, do the rest in parallel
-     if (!cutoff) {
-     cilk_for(int mv_index = start_index; mv_index < num_of_moves;
-     mv_index++) {
-     =======
-   */
   if (!cutoff) {
     sort_incremental(move_list + critical_moves,
                      num_of_moves - critical_moves,
@@ -168,9 +151,8 @@ static score_t scout_search(searchNode * node, int depth,
           simple_acquire(&LMR_mutex);
           // Get the next move from the move list.
           int local_index = number_of_moves_evaluated++;
-          // int local_index = __sync_fetch_and_add(&number_of_moves_evaluated, 1);
+
           // Get the next move from the move list.
-          // int local_index = __sync_fetch_and_add(&number_of_moves_evaluated, 1);
           move_t mv = get_move(move_list[local_index]);
 
           if (TRACE_MOVES) {
@@ -197,7 +179,8 @@ static score_t scout_search(searchNode * node, int depth,
             local_cutoff =
               search_process_score(node, mv, local_index, &result,
                                    SEARCH_SCOUT);
-            simple_release(&node_mutex);
+            // simple_release(&node_mutex);
+            __sync_bool_compare_and_swap(&node_mutex, 1, 0); 
           }
 
           if (local_cutoff) {
