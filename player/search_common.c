@@ -2,6 +2,8 @@
 #include "simple_mutex.h"
 #include <cilk/cilk.h>
 
+#define SCORE_THRESHOLD 1
+
 // tic counter for how often we should check for abort
 static int     tics = 0;
 static double  sstart;    // start time of a search in milliseconds
@@ -473,6 +475,7 @@ static int get_sortable_move_list(searchNode *node, sortable_move_t * move_list,
                          int hash_table_move) {
   // number of moves in list
   int num_of_moves = generate_all(&(node->position), move_list, false);
+  int num_of_good_moves = num_of_moves;
 
   color_t fake_color_to_move = color_to_move_of(&(node->position));
   int critical_moves = 0;
@@ -481,8 +484,9 @@ static int get_sortable_move_list(searchNode *node, sortable_move_t * move_list,
   move_t killer_b = killer[KMT(node->ply, 1)];
 
   sortable_move_t temp;
+  sortable_move_t temp2;
   // sort special moves to the front
-  for (int mv_index = 0; mv_index < num_of_moves; mv_index++) {
+  for (int mv_index = 0; mv_index < num_of_good_moves; mv_index++) {
     move_t mv = get_move(move_list[mv_index]);
     if (mv == hash_table_move) {
       set_sort_key(&move_list[mv_index], SORT_MASK);
@@ -508,12 +512,22 @@ static int get_sortable_move_list(searchNode *node, sortable_move_t * move_list,
       square_t fs  = from_square(mv);
       int      ot  = ORI_MASK & (ori_of(node->position.board[fs]) + ro);
       square_t ts  = to_square(mv);
-      set_sort_key(&move_list[mv_index],
-                   best_move_history[BMH(fake_color_to_move, pce, ts, ot)]);
+
+      int score = best_move_history[BMH(fake_color_to_move, pce, ts, ot)];
+      if (score < SCORE_THRESHOLD) {
+        num_of_good_moves--;
+        temp2 = move_list[mv_index];
+        move_list[mv_index] = move_list[num_of_good_moves];
+        move_list[num_of_good_moves] = temp2;
+        mv_index--;
+        // continue;
+      }
+      set_sort_key(&move_list[mv_index], score);
     }
   }
   sort_incremental(move_list, critical_moves, critical_moves);
   move_list[num_of_moves] = critical_moves;
+  move_list[num_of_moves + 1] = num_of_good_moves;
 
   return num_of_moves;
 }

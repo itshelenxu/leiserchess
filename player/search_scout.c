@@ -88,7 +88,7 @@ static score_t scout_search(searchNode * node, int depth,
 
   // Obtain the sorted move list.
   int num_of_moves = get_sortable_move_list(node, move_list, hash_table_move);
-
+  int good_moves = move_list[num_of_moves + 1];
   int number_of_moves_evaluated = 0;
 
   // A simple mutex. See simple_mutex.h for implementation details.
@@ -155,8 +155,8 @@ static score_t scout_search(searchNode * node, int depth,
    */
   if (!cutoff) {
     sort_incremental(move_list + critical_moves,
-                     num_of_moves - critical_moves,
-                     num_of_moves - critical_moves);
+                     good_moves - critical_moves,
+                     good_moves - critical_moves);
     //if (depth > DEEP_DEPTH_THRESHOLD || (num_of_moves > MOVE_THRESHOLD && depth > DEPTH_THRESHOLD)) { // parallel part with coarsening
     if (depth > DEPTH_THRESHOLD) {
       cilk_for(int mv_index = critical_moves;

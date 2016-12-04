@@ -84,14 +84,14 @@ static score_t scout_search(searchNode *node, int depth,
   int num_of_moves = get_sortable_move_list(node, move_list, hash_table_move);
 
   int number_of_moves_evaluated = 0;
-
+  int good_moves = move_list[num_of_moves + 1];
 
   // A simple mutex. See simple_mutex.h for implementation details.
   simple_mutex_t node_mutex;
   init_simple_mutex(&node_mutex);
 
   // Sort the move list.
-  sort_incremental(move_list, num_of_moves, number_of_moves_evaluated);
+  sort_incremental(move_list, good_moves, number_of_moves_evaluated);
 
   for (int mv_index = 0; mv_index < num_of_moves; mv_index++) {
     // Get the next move from the move list.
