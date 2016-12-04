@@ -249,8 +249,8 @@ leafEvalResult evaluate_as_leaf(searchNode *node, searchType_t type) {
 
 // Evaluate the move by performing a search.
 moveEvaluationResult evaluateMove(searchNode *node, move_t mv, move_t killer_a,
-                                  move_t killer_b, searchType_t type,
-                                  uint64_t *node_count_serial) {
+                                  move_t killer_b, move_t killer_c, move_t killer_d,
+                                  searchType_t type, uint64_t *node_count_serial) {
   int ext = 0;  // extensions
   bool blunder = false;  // shoot our own piece
   moveEvaluationResult result;
@@ -319,7 +319,7 @@ moveEvaluationResult evaluateMove(searchNode *node, move_t mv, move_t killer_a,
   // https://chessprogramming.wikispaces.com/Late+Move+Reductions
   int next_reduction = 0;
   if (type == SEARCH_SCOUT && node->legal_move_count + 1 >= LMR_R1 && node->depth > 2 &&
-      zero_victims(victims) && mv != killer_a && mv != killer_b) {
+      zero_victims(victims) && mv != killer_a && mv != killer_b && mv != killer_c && mv != killer_d) {
     if (node->legal_move_count + 1 >= LMR_R2) {
       next_reduction = 2;
     } else {
@@ -329,6 +329,9 @@ moveEvaluationResult evaluateMove(searchNode *node, move_t mv, move_t killer_a,
 
   result.type = MOVE_EVALUATED;
   int search_depth = ext + node->depth - 1;
+
+  int local_lmr = node->legal_move_count;
+  node->legal_move_count++;
 
   // Check if we need to perform a reduced-depth search.
   //
@@ -357,7 +360,7 @@ moveEvaluationResult evaluateMove(searchNode *node, move_t mv, move_t killer_a,
     result.score = -scout_search(&(result.next_node), search_depth,
                                  node_count_serial);
   } else {
-    if (node->legal_move_count == 0 || node->quiescence) {
+    if (local_lmr == 0 || node->quiescence) {
       result.score = -searchPV(&(result.next_node), search_depth, node_count_serial);
     } else {
       result.score = -scout_search(&(result.next_node), search_depth,
@@ -403,6 +406,8 @@ bool search_process_score(searchNode *node, move_t mv, int mv_index,
 
     if (result->score >= node->beta) {
       if (mv != killer[KMT(node->ply, 0)] && ENABLE_TABLES) {
+        killer[KMT(node->ply, 3)] = killer[KMT(node->ply, 2)];
+        killer[KMT(node->ply, 2)] = killer[KMT(node->ply, 1)];
         killer[KMT(node->ply, 1)] = killer[KMT(node->ply, 0)];
         killer[KMT(node->ply, 0)] = mv;
       }
@@ -436,6 +441,8 @@ static int get_sortable_move_list(searchNode *node, sortable_move_t * move_list,
 
   move_t killer_a = killer[KMT(node->ply, 0)];
   move_t killer_b = killer[KMT(node->ply, 1)];
+  move_t killer_c = killer[KMT(node->ply, 2)];
+  move_t killer_d = killer[KMT(node->ply, 3)];
 
   // sort special moves to the front
   for (int mv_index = 0; mv_index < num_of_moves; mv_index++) {
@@ -445,6 +452,10 @@ static int get_sortable_move_list(searchNode *node, sortable_move_t * move_list,
     } else if (mv == killer_a) {
       set_sort_key(&move_list[mv_index], SORT_MASK - 1);
     } else if (mv == killer_b) {
+      set_sort_key(&move_list[mv_index], SORT_MASK - 2);
+    } else if (mv == killer_c) {
+      set_sort_key(&move_list[mv_index], SORT_MASK - 2);
+    } else if (mv == killer_d) {
       set_sort_key(&move_list[mv_index], SORT_MASK - 2);
     } else {
       ptype_t  pce = ptype_mv_of(mv);
