@@ -249,9 +249,11 @@ leafEvalResult evaluate_as_leaf(searchNode *node, searchType_t type) {
   return result;
 }
 
-extern inline void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
+void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
                                   move_t killer_b, move_t killer_c,
-                                  move_t killer_d, searchType_t type,
+                                  move_t killer_d, move_t killer_e,
+                                 move_t killer_f, move_t killer_g,
+                                move_t killer_h, searchType_t type,
                                   uint64_t *node_count_serial,
                                   moveEvaluationResult *result,
                                   simple_mutex_t* mutex) {
@@ -328,7 +330,7 @@ extern inline void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
   // https://chessprogramming.wikispaces.com/Late+Move+Reductions
   int next_reduction = 0;
   if (type == SEARCH_SCOUT && node->legal_move_count + 1 >= LMR_R1 && node->depth > 2 &&
-      zero_victims(victims) && mv != killer_a && mv != killer_b && mv != killer_c && mv != killer_d) {
+      zero_victims(victims) && mv != killer_a && mv != killer_b && mv != killer_c && mv != killer_d && mv != killer_e && mv != killer_f && mv != killer_g && mv != killer_h) {
     if (node->legal_move_count + 1 >= LMR_R2) {
       next_reduction = 2;
     } else {
@@ -439,6 +441,10 @@ bool search_process_score(searchNode *node, move_t mv, int mv_index,
 
     if (result->score >= node->beta) {
       if (mv != killer[KMT(node->ply, 0)] && ENABLE_TABLES) {
+        killer[KMT(node->ply, 7)] = killer[KMT(node->ply, 6)];
+        killer[KMT(node->ply, 6)] = killer[KMT(node->ply, 5)];
+        killer[KMT(node->ply, 5)] = killer[KMT(node->ply, 4)];
+        killer[KMT(node->ply, 4)] = killer[KMT(node->ply, 3)];
         killer[KMT(node->ply, 3)] = killer[KMT(node->ply, 2)];
         killer[KMT(node->ply, 2)] = killer[KMT(node->ply, 1)];
         killer[KMT(node->ply, 1)] = killer[KMT(node->ply, 0)];
@@ -477,6 +483,10 @@ static int get_sortable_move_list(searchNode *node, sortable_move_t * move_list,
   move_t killer_b = killer[KMT(node->ply, 1)];
   move_t killer_c = killer[KMT(node->ply, 2)];
   move_t killer_d = killer[KMT(node->ply, 3)];
+  move_t killer_e = killer[KMT(node->ply, 4)];
+  move_t killer_f = killer[KMT(node->ply, 5)];
+  move_t killer_g = killer[KMT(node->ply, 6)];
+  move_t killer_h = killer[KMT(node->ply, 7)];
 
   sortable_move_t temp;
   // sort special moves to the front
@@ -508,6 +518,30 @@ static int get_sortable_move_list(searchNode *node, sortable_move_t * move_list,
       critical_moves++;
     } else if (mv == killer_d) {
       set_sort_key(&move_list[mv_index], SORT_MASK - 4);
+      temp = move_list[critical_moves];
+      move_list[critical_moves] = move_list[mv_index];
+      move_list[mv_index] = temp;
+      critical_moves++; 
+    } else if (mv == killer_e) {
+      set_sort_key(&move_list[mv_index], SORT_MASK - 5);
+      temp = move_list[critical_moves];
+      move_list[critical_moves] = move_list[mv_index];
+      move_list[mv_index] = temp;
+      critical_moves++;
+    } else if (mv == killer_f) {
+      set_sort_key(&move_list[mv_index], SORT_MASK - 6);
+      temp = move_list[critical_moves];
+      move_list[critical_moves] = move_list[mv_index];
+      move_list[mv_index] = temp;
+      critical_moves++;
+    } else if (mv == killer_g) {
+      set_sort_key(&move_list[mv_index], SORT_MASK - 7);
+      temp = move_list[critical_moves];
+      move_list[critical_moves] = move_list[mv_index];
+      move_list[mv_index] = temp;
+      critical_moves++;
+    } else if (mv == killer_h) {
+      set_sort_key(&move_list[mv_index], SORT_MASK - 8);
       temp = move_list[critical_moves];
       move_list[critical_moves] = move_list[mv_index];
       move_list[mv_index] = temp;
