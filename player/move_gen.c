@@ -740,22 +740,30 @@ void low_level_make_move(position_t * old, position_t * p, move_t mv) {
   square_t to_sq = to_square(mv);
   rot_t rot = rot_of(mv);
 
-  WHEN_DEBUG_VERBOSE( {
+  WHEN_DEBUG_VERBOSE({
                      DEBUG_LOG(1, "low_level_make_move 2:\n");
                      square_to_str(from_sq, buf, MAX_CHARS_IN_MOVE);
                      DEBUG_LOG(1, "from_sq: %s\n", buf);
                      square_to_str(to_sq, buf, MAX_CHARS_IN_MOVE);
                      DEBUG_LOG(1, "to_sq: %s\n", buf);
                      switch (rot) {
-case NONE:
-DEBUG_LOG(1, "rot: none\n"); break; case RIGHT:
-DEBUG_LOG(1, "rot: R\n"); break; case UTURN:
-DEBUG_LOG(1, "rot: U\n"); break; case LEFT:
-DEBUG_LOG(1, "rot: L\n"); break; default:
-                     tbassert(false, "Not like a boss at all.\n");      // Bad, bad, bad
-                     break;}
+                      case NONE:
+                        DEBUG_LOG(1, "rot: none\n"); 
+                        break; 
+                      case RIGHT:
+                        DEBUG_LOG(1, "rot: R\n"); 
+                        break; 
+                      case UTURN:
+                        DEBUG_LOG(1, "rot: U\n"); 
+                        break; 
+                      case LEFT:
+                        DEBUG_LOG(1, "rot: L\n"); 
+                        break; 
+                      default:
+                        tbassert(false, "Not like a boss at all.\n");      // Bad, bad, bad
+                        break;
                      }
-  );
+                    });
 
   *p = *old;
 
@@ -797,12 +805,12 @@ DEBUG_LOG(1, "rot: L\n"); break; default:
     tbassert(from_ptype == PAWN || from_ptype == KING,
              "Error: from_ptype should be either PAWN or KING");
 
-    if (to_ptype == EMPTY) {
-      int from_rank = rnk_of(from_sq);
-      int from_file = fil_of(from_sq);
-      int to_rank = rnk_of(to_sq);
-      int to_file = fil_of(to_sq);
+    int from_rank = rnk_of(from_sq);
+    int from_file = fil_of(from_sq);
+    int to_rank = rnk_of(to_sq);
+    int to_file = fil_of(to_sq);
 
+    if (to_ptype == EMPTY) {
       // add the new piece
       p->ranks[to_rank] |= (1 << to_file);
       p->files[to_file] |= (1 << to_rank);
@@ -811,6 +819,7 @@ DEBUG_LOG(1, "rot: L\n"); break; default:
       p->ranks[from_rank] &= ~(1 << from_file);
       p->files[from_file] &= ~(1 << from_rank);
     }
+
     // Update Pawn locations if necessary
     if (from_ptype == PAWN) {
       if (to_ptype == PAWN) {
@@ -821,42 +830,44 @@ DEBUG_LOG(1, "rot: L\n"); break; default:
           // in the arrays.
 
           // First, get the index of the from-pawn.
-          for (int i = 0; i < p->ploc[from_color].pawns_count; ++i) {
-            if (from_sq == p->ploc[from_color].squares[i]) {
-              // Second, get the index of the to-pawn.
-              for (int j = 0; j < p->ploc[to_color].pawns_count; ++j) {
-                if (to_sq == p->ploc[to_color].squares[j]) {
-                  square_t temp = p->ploc[from_color].squares[i];
-                  p->ploc[from_color].squares[i] = p->ploc[to_color].squares[j];
-                  p->ploc[to_color].squares[j] = temp;
-                  // sort_pawns(p, from_color, i);
-                  // sort_pawns(p, to_color, j);
-                  break;
-                }
-              }
-              break;
-            }
-          }
+          tbassert(p->ploc[from_color].pawns_map[from_file][from_rank] >=0 && 
+                   p->ploc[from_color].pawns_map[from_file][from_rank] < p->ploc[from_color].pawns_count,
+                   "Error: the index of pawn is INVALID");
+          int i = p->ploc[from_color].pawns_map[from_file][from_rank];
+
+          // Second, get the index of the to-pawn.
+          tbassert(p->ploc[to_color].pawns_map[to_file][to_rank] >=0 && 
+                   p->ploc[to_color].pawns_map[to_file][to_rank] < p->ploc[to_color].pawns_count,
+                   "Error: the index of pawn is INVALID");
+          int j = p->ploc[to_color].pawns_map[to_file][to_rank];
+          p->ploc[from_color].squares[i] = to_sq;
+          p->ploc[to_color].squares[j] = from_sq;
+
+          // update pawns_map
+          p->ploc[from_color].pawns_map[from_file][from_rank] = MAX_PAWNS;
+          p->ploc[from_color].pawns_map[to_file][to_rank] = i;
+          p->ploc[to_color].pawns_map[to_file][to_rank] = MAX_PAWNS;
+          p->ploc[to_color].pawns_map[from_file][from_rank] = j;
         }
       } else {
         // The from-square is a pawn and the to-square is not a pawn.
-        for (int i = 0; i < p->ploc[from_color].pawns_count; ++i) {
-          if (from_sq == p->ploc[from_color].squares[i]) {
-            p->ploc[from_color].squares[i] = to_sq;
-            // sort_pawns(p, from_color, i);
-            break;
-          }
-        }
+        tbassert(p->ploc[from_color].pawns_map[from_file][from_rank] >=0 && 
+                 p->ploc[from_color].pawns_map[from_file][from_rank] < p->ploc[from_color].pawns_count,
+                 "Error: the index of pawn is INVALID");
+        int i = p->ploc[from_color].pawns_map[from_file][from_rank];
+        p->ploc[from_color].squares[i] = to_sq;
+        p->ploc[from_color].pawns_map[from_file][from_rank] = MAX_PAWNS;
+        p->ploc[from_color].pawns_map[to_file][to_rank] = i;
       }
     } else if (to_ptype == PAWN) {
       // The to-square is a pawn and the from-square is not a pawn.
-      for (int i = 0; i < p->ploc[to_color].pawns_count; ++i) {
-        if (to_sq == p->ploc[to_color].squares[i]) {
-          p->ploc[to_color].squares[i] = from_sq;
-          // sort_pawns(p, to_color, i);
-          break;
-        }
-      }
+      tbassert(p->ploc[to_color].pawns_map[to_file][to_rank] >=0 && 
+               p->ploc[to_color].pawns_map[to_file][to_rank] < p->ploc[to_color].pawns_count,
+               "Error: the index of pawn is INVALID"); 
+      int j = p->ploc[to_color].pawns_map[to_file][to_rank];   
+      p->ploc[to_color].squares[j] = from_sq; 
+      p->ploc[to_color].pawns_map[to_file][to_rank] = MAX_PAWNS;
+      p->ploc[to_color].pawns_map[from_file][from_rank] = j;
     }
     // Update King locations if necessary
     if (ptype_of(from_piece) == KING) {
@@ -925,14 +936,14 @@ victims_t make_move(position_t * old, position_t * p, move_t mv) {
     // If the victim piece is a pawn, remove it from the pawn array.
     color_t color = color_of(victim_piece);
     if (ptype_of(victim_piece) == PAWN) {
-      for (int i = 0; i < p->ploc[color].pawns_count; ++i) {
-        if (victim_sq == p->ploc[color].squares[i]) {
-          p->ploc[color].squares[i] =
-            p->ploc[color].squares[p->ploc[color].pawns_count - 1];
-          p->ploc[color].pawns_count--;
-          break;
-        }
-      }
+      int i = p->ploc[color].pawns_map[victim_file][victim_rank];
+      p->ploc[color].squares[i] =
+        p->ploc[color].squares[p->ploc[color].pawns_count - 1]; 
+      // update pawns_map 
+      p->ploc[color].pawns_map[fil_of(p->ploc[color].squares[i])][rnk_of(p->ploc[color].squares[i])] = i;
+
+      p->ploc[color].pawns_count--;
+      p->ploc[color].pawns_map[victim_file][victim_rank] = MAX_PAWNS;
     }
 
     tbassert(p->key == compute_zob_key(p),
@@ -1032,17 +1043,20 @@ static uint64_t perft_search(position_t * p, int depth, int ply) {
       np.board[victim_sq] = 0;
       np.key ^= zob[victim_sq][0];
 
+      // remove the zapped piece
+      int victim_rank = rnk_of(victim_sq);
+      int victim_file = fil_of(victim_sq);
+      p->ranks[victim_rank] &= ~(1 << victim_file);
+      p->files[victim_file] &= ~(1 << victim_rank);
+
       // If the victim piece is a pawn, remove it from the pawn array.
       color_t color = color_of(victim_piece);
       if (ptype_of(victim_piece) == PAWN) {
-        for (int i = 0; i < p->ploc[color].pawns_count; ++i) {
-          if (victim_sq == p->ploc[color].squares[i]) {
-            p->ploc[color].squares[i] =
-              p->ploc[color].squares[p->ploc[color].pawns_count - 1];
-            p->ploc[color].pawns_count--;
-            break;
-          }
-        }
+        int i = p->ploc[color].pawns_map[victim_file][victim_rank];
+        p->ploc[color].squares[i] =
+          p->ploc[color].squares[p->ploc[color].pawns_count - 1];
+        p->ploc[color].pawns_count--;
+        p->ploc[color].pawns_map[victim_file][victim_rank] = MAX_PAWNS;
       }
 
       if (ptype_of(victim_piece) == KING)

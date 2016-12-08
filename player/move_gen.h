@@ -135,6 +135,10 @@ typedef struct victims_t {
 typedef struct pawns_t {
   int pawns_count;
   square_t squares[MAX_PAWNS];
+  // pawns_map[i][j] stores the pawn's index in squares
+  // pawns_map[i][j] corresponds to the pawn in (f=i, r=j)
+  // if pawns_map[i][j] = MAX_PAWNS, there is no pawn in (f=i, r=j)
+  uint8_t pawns_map[BOARD_WIDTH][BOARD_WIDTH];  
 } pawns_t;
 
 // returned by make move in illegal situation

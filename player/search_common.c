@@ -489,7 +489,6 @@ static int get_sortable_move_list(searchNode *node, sortable_move_t * move_list,
   move_t killer_c = killer[KMT(node->ply, 2)];
   move_t killer_d = killer[KMT(node->ply, 3)];
   sortable_move_t temp;
-  sortable_move_t temp2;
   // sort special moves to the front
   for (int mv_index = 0; mv_index < num_of_good_moves; mv_index++) {
     move_t mv = get_move(move_list[mv_index]);
@@ -560,7 +559,7 @@ static int get_sortable_move_list(searchNode *node, sortable_move_t * move_list,
       #ifndef DEBUG
       if (score == 0) {
         num_of_good_moves--;
-        temp2 = move_list[mv_index];
+        sortable_move_t  temp2 = move_list[mv_index];
         move_list[mv_index] = move_list[num_of_good_moves];
         move_list[num_of_good_moves] = temp2;
         mv_index--;

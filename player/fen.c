@@ -373,19 +373,26 @@ int fen_to_pos(position_t *p, char *fen) {
   int Kings[2] = {0, 0};
   for (fil_t f = 0; f < BOARD_WIDTH; ++f) {
     for (rnk_t r = 0; r < BOARD_WIDTH; ++r) {
+      // initialize pawns_map
+      p->ploc[0].pawns_map[f][r] = MAX_PAWNS;
+      p->ploc[1].pawns_map[f][r] = MAX_PAWNS;
+
       square_t sq = square_table[f][r];
       piece_t x = p->board[sq];
       ptype_t typ = ptype_of(x);
       if (typ == KING) {
-        Kings[color_of(x)]++;
-        p->kloc[color_of(x)] = sq;
+        color_t col = color_of(x);
+        Kings[col]++;
+        p->kloc[col] = sq;
         // printf("f: %d, r: %d, sq: %d\n", f, r, sq);
       } else if (typ == PAWN) {
         // Caution: assumes that the number of pawns per color never exceeds 8!
-        pawns_t* pawns = &(p->ploc[color_of(x)]);
+        color_t col = color_of(x);
+        pawns_t* pawns = &(p->ploc[col]);
         pawns->squares[pawns->pawns_count] = sq;
+        pawns->pawns_map[f][r] = pawns->pawns_count;
         ++pawns->pawns_count;
-      }
+      } 
     }
   }
 
