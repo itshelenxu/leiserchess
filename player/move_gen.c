@@ -138,7 +138,7 @@ square_t next_piece(position_t * p, square_t current, king_ori_t dir) {
           return 0;
         } else {
           int trailing_zeros = __builtin_ctz(bits_left);
-          return (file + FIL_ORIGIN) * ARR_WIDTH + RNK_ORIGIN + rank + trailing_zeros + 1;      // location of next piece 
+          return current + trailing_zeros + 1;      // location of next piece 
         }
       }
     case SS:{
@@ -154,7 +154,7 @@ square_t next_piece(position_t * p, square_t current, king_ori_t dir) {
                        leading_zeros - 1) >= 0,
                    "file:%d, rank: %d, bits_left: %d, bit_array: %d, leading zeros: %d\n",
                    file, rank, bits_left, bit_array, leading_zeros);
-          return (file + FIL_ORIGIN) * ARR_WIDTH + RNK_ORIGIN + rank - leading_zeros - 1;       // location of next piece 
+          return current - leading_zeros - 1;       // location of next piece 
         }
       }
     case WW:{
@@ -168,7 +168,7 @@ square_t next_piece(position_t * p, square_t current, king_ori_t dir) {
                     RNK_ORIGIN + rank) < ARR_SIZE
                    && ((file + FIL_ORIGIN - leading_zeros - 1) * ARR_WIDTH +
                        RNK_ORIGIN + rank) >= 0, "error\n");
-          return (file + FIL_ORIGIN - leading_zeros - 1) * ARR_WIDTH + RNK_ORIGIN + rank;       // location of next piece 
+          return current - (leading_zeros + 1) * ARR_WIDTH;      // location of next piece 
         }
       }
     case EE:{
@@ -178,7 +178,7 @@ square_t next_piece(position_t * p, square_t current, king_ori_t dir) {
           return 0;
         } else {
           int trailing_zeros = __builtin_ctz(bits_left);
-          return (file + FIL_ORIGIN + trailing_zeros + 1) * ARR_WIDTH + RNK_ORIGIN + rank;      // location of next piece 
+          return current + (trailing_zeros + 1) * ARR_WIDTH;     // location of next piece 
         }
       }
 
