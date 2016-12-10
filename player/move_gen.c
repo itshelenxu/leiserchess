@@ -80,11 +80,7 @@ int compare_sq(square_t s, square_t t) {
 
 // which color is moving next
 color_t color_to_move_of(position_t * p) {
-  if ((p->ply & 1) == 0) {
-    return WHITE;
-  } else {
-    return BLACK;
-  }
+  return (p->ply & 1); 
 }
 
 color_t opp_color(color_t c) {

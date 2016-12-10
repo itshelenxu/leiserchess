@@ -366,7 +366,8 @@ int generate_pinned_pawn_list(position_t * p, color_t c,
   color_t opposite_color = opp_color(c);
 
   while (true) {
-    current_loc += beam[laser_dir];
+    current_loc = next_piece(p, current_loc, laser_dir);
+    //current_loc += beam[laser_dir];
     tbassert(current_loc < ARR_SIZE
              && current_loc >= 0, "current_loc: %d\n", current_loc);
 
