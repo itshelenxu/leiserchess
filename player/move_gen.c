@@ -661,9 +661,13 @@ static inline square_t fire_laser(position_t * p, color_t c) {
 
   while (true) {
     sq = next_piece(p, sq, bdir);
-
     tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
+    if (sq == 0) {
+      return 0;
+    }
+
     current_piece = ptype_of(p->board[sq]);
+    tbassert(current_piece == PAWN || current_piece == KING, "invalid piece");
 
     if (current_piece == PAWN) {
       // int oldbdir = bdir;
@@ -672,11 +676,9 @@ static inline square_t fire_laser(position_t * p, color_t c) {
       if (bdir < 0) {           // Hit back of Pawn
         return sq;
       }
-    } else if (current_piece == KING) {
+    } else {
       return sq;
-    } else if (current_piece == INVALID) {
-      return 0;
-    }
+    } 
   }
 }
 

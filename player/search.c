@@ -165,10 +165,14 @@ static score_t searchPV(searchNode *node, int depth, uint64_t *node_count_serial
     evaluateMove(node, mv, killer_a, killer_b, killer_c, killer_d,
         /* killer_e, killer_f, killer_g, killer_h, */
                  SEARCH_PV,
-                 node_count_serial, &result, NULL);
+                 node_count_serial, &result);
 
     if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE) {
       continue;
+    }
+
+    if (result.type == MOVE_EVALUATED) {
+      node->legal_move_count++;
     }
 
     // A legal move is a move that's not KO, but when we are in quiescence

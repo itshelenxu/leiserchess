@@ -257,8 +257,8 @@ void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
                                  move_t killer_f, move_t killer_g,
                                 move_t killer_h,*/ searchType_t type,
                                   uint64_t *node_count_serial,
-                                  moveEvaluationResult *result,
-                                  simple_mutex_t* mutex) {
+                                  moveEvaluationResult *result) { /*,
+                                  simple_mutex_t* mutex) { */
   int ext = 0;  // extensions
   bool blunder = false;  // shoot our own piece
   // moveEvaluationResult result;
@@ -273,7 +273,7 @@ void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
   // illegal).
   if (is_KO(victims)) {
     result->type = MOVE_ILLEGAL;
-    if ( mutex ) { __sync_bool_compare_and_swap(mutex, 1, 0); }
+    // if ( mutex ) { __sync_bool_compare_and_swap(mutex, 1, 0); }
     return;
   }
 
@@ -282,14 +282,14 @@ void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
     // Compute the end-game score.
     result->type = MOVE_GAMEOVER;
     result->score = get_game_over_score(victims, node->pov, node->ply);
-    if ( mutex ) { __sync_bool_compare_and_swap(mutex, 1, 0); }
+    // if ( mutex ) { __sync_bool_compare_and_swap(mutex, 1, 0); }
     return;
   }
 
   // Ignore noncapture moves when in quiescence.
   if (zero_victims(victims) && node->quiescence) {
     result->type = MOVE_IGNORE;
-    if ( mutex ) { __sync_bool_compare_and_swap(mutex, 1, 0); }
+    // if ( mutex ) { __sync_bool_compare_and_swap(mutex, 1, 0); }
     return;
   }
 
@@ -297,7 +297,7 @@ void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
   if (is_repeated(&(result->next_node.position), node->ply)) {
     result->type = MOVE_GAMEOVER;
     result->score = get_draw_score(&(result->next_node.position), node->ply);
-    if ( mutex ) { __sync_bool_compare_and_swap(mutex, 1, 0); }
+    // if ( mutex ) { __sync_bool_compare_and_swap(mutex, 1, 0); }
     return;
   }
 
@@ -315,7 +315,7 @@ void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
   // Do not consider moves that are blunders while in quiescence.
   if (node->quiescence && blunder) {
     result->type = MOVE_IGNORE;
-    if (mutex) { __sync_bool_compare_and_swap(mutex, 1, 0); }
+    // if (mutex) { __sync_bool_compare_and_swap(mutex, 1, 0); }
     return;
   }
 
@@ -343,10 +343,10 @@ void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
   result->type = MOVE_EVALUATED;
   int search_depth = ext + node->depth - 1;
   tbassert(result->type == MOVE_EVALUATED, "type is not MOVE_EVALUATED\n");
-  int local_legal_moves = node->legal_move_count; 
+  //int local_legal_moves = node->legal_move_count; 
   // update legal_move_count and release the lock
-  node->legal_move_count++;
-  if ( mutex ) { __sync_bool_compare_and_swap(mutex, 1, 0); }
+  // node->legal_move_count++;
+  // if ( mutex ) { __sync_bool_compare_and_swap(mutex, 1, 0); }
 
   // Check if we need to perform a reduced-depth search.
   //
@@ -375,7 +375,7 @@ void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
     result->score = -scout_search(&(result->next_node), search_depth,
                                  node_count_serial);
   } else {
-    if (local_legal_moves == 0 || node->quiescence) {
+    if (node->legal_move_count == 0 || node->quiescence) {
       result->score = -searchPV(&(result->next_node), search_depth, node_count_serial);
     } else {
       result->score = -scout_search(&(result->next_node), search_depth,
