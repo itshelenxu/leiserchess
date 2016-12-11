@@ -41,6 +41,7 @@ implementation has been provided for you.
 // -----------------------------------------------------------------------------
 
 #define ABORT_CHECK_PERIOD 0xfff
+#define DEPTH_THRESHOLD 1
 
 // -----------------------------------------------------------------------------
 // READ ONLY settings (see iopt in leiserchess.c)
@@ -115,7 +116,7 @@ static score_t searchPV(searchNode *node, int depth, uint64_t *node_count_serial
     node->best_score = pre_evaluation_result.score;
     if (node->best_score > node->alpha) {
       node->alpha = node->best_score;
-    }
+    }   
   }
 
   // Get the killer moves at this node.
@@ -123,36 +124,13 @@ static score_t searchPV(searchNode *node, int depth, uint64_t *node_count_serial
   move_t killer_b = killer[KMT(node->ply, 1)];
   move_t killer_c = killer[KMT(node->ply, 2)];
   move_t killer_d = killer[KMT(node->ply, 3)];
-  /*
-  move_t killer_e = killer[KMT(node->ply, 4)];
-  move_t killer_f = killer[KMT(node->ply, 5)];
-  move_t killer_g = killer[KMT(node->ply, 6)];
-  move_t killer_h = killer[KMT(node->ply, 7)];
-  */
 
-  // sortable_move_t move_list
-  //
-  // Contains a list of possible moves at this node. These moves are "sortable"
-  //   and can be compared as integers. This is accomplished by using high-order
-  //   bits to store a sort key.
-  //
-  // Keep track of the number of moves that we have considered at this node.
-  //   After we finish searching moves at this node the move_list array will
-  //   be organized in the following way:
-  //
-  //   m0, m1, ... , m_k-1, m_k, ... , m_N-1
-  //
-  //  where k = num_moves_tried, and N = num_of_moves
-  //
-  //  This will allow us to update the best_move_history table easily by
-  //  scanning move_list from index 0 to k such that we update the table
-  //  only for moves that we actually considered at this node.
   sortable_move_t move_list[MAX_NUM_MOVES];
   int num_of_moves = get_sortable_move_list(node, move_list, hash_table_move);
   int num_moves_tried = 0;
-  
+
   // Incrementally sort the move list.
-  sort_incremental(move_list, num_of_moves, 0);
+  sort_incremental(move_list, num_of_moves, 0); 
 
   // Start searching moves.
   for (int mv_index = 0; mv_index < num_of_moves; mv_index++) {
@@ -165,14 +143,10 @@ static score_t searchPV(searchNode *node, int depth, uint64_t *node_count_serial
     evaluateMove(node, mv, killer_a, killer_b, killer_c, killer_d,
         /* killer_e, killer_f, killer_g, killer_h, */
                  SEARCH_PV,
-                 node_count_serial, &result);
+                 node_count_serial, &result, NULL);
 
     if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE) {
       continue;
-    }
-
-    if (result.type == MOVE_EVALUATED) {
-      node->legal_move_count++;
     }
 
     // A legal move is a move that's not KO, but when we are in quiescence
@@ -206,6 +180,8 @@ static score_t searchPV(searchNode *node, int depth, uint64_t *node_count_serial
 
   return node->best_score;
 }
+
+
 
 // -----------------------------------------------------------------------------
 // searchRoot

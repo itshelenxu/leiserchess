@@ -688,7 +688,7 @@ int main(int argc, char *argv[]) {
           UciBeginSearch(&gme[ix], depth, INF_TIME);
         } else {
           goal = tme * 0.02;   // use about 1/50 of main time
-          goal += inc * 0.80;  // use most of increment
+          goal += inc;  // use most of increment
           // sanity check,  make sure that we don't run ourselves too low
           if (goal*10 > tme) goal = tme / 10.0;
           UciBeginSearch(&gme[ix], INF_DEPTH, goal);

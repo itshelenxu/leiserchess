@@ -126,14 +126,10 @@ static score_t scout_search(searchNode * node, int depth,
     moveEvaluationResult result;
     evaluateMove(node, mv, killer_a, killer_b, killer_c, killer_d,
         /* killer_e, killer_f, killer_g, killer_h, */
-                 SEARCH_SCOUT, node_count_serial, &result);
+                 SEARCH_SCOUT, node_count_serial, &result, NULL);
     if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
         || abortf || parallel_parent_aborted(node)) {
       continue;
-    }
-
-    if (result.type == MOVE_EVALUATED) {
-      node->legal_move_count++;
     }
 
     cutoff = search_process_score(node, mv, local_index, &result, SEARCH_SCOUT);
@@ -146,8 +142,8 @@ static score_t scout_search(searchNode * node, int depth,
   }
 
   // keep legal_move_count up to date
-  // simple_mutex_t LMR_mutex;
-  // init_simple_mutex(&LMR_mutex);
+  simple_mutex_t LMR_mutex;
+  init_simple_mutex(&LMR_mutex);
 
   if (!cutoff) {
     sort_incremental(move_list + critical_moves,
@@ -161,9 +157,9 @@ static score_t scout_search(searchNode * node, int depth,
           if (node->abort)
             continue;
 
-          // simple_acquire(&LMR_mutex);
+          simple_acquire(&LMR_mutex);
           // Get the next move from the move list.
-          int local_index = number_of_moves_evaluated++;
+           int local_index = number_of_moves_evaluated++;
 
           // Get the next move from the move list.
           move_t mv = get_move(move_list[local_index]);
@@ -180,14 +176,10 @@ static score_t scout_search(searchNode * node, int depth,
           //                SEARCH_SCOUT, node_count_serial, &result, &LMR_mutex);
           evaluateMove(node, mv, killer_a, killer_b, killer_c, killer_d,
             /*  killer_e, killer_f, killer_g, killer_h, */
-                          SEARCH_SCOUT, node_count_serial, &result);
-
-          if (result.type == MOVE_EVALUATED) {
-             __sync_fetch_and_add(&node->legal_move_count, 1);
-          }
+                          SEARCH_SCOUT, node_count_serial, &result, &LMR_mutex);
 
           // we unlock the mutex in evaluateMove
-          // tbassert(LMR_mutex == 0, "LMR mutex not unlocked\n");
+          tbassert(LMR_mutex == 0, "LMR mutex not unlocked\n");
           if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
               || abortf || parallel_parent_aborted(node)) {
             continue;
@@ -229,15 +221,11 @@ static score_t scout_search(searchNode * node, int depth,
         evaluateMove(node, mv, killer_a, killer_b, killer_c, killer_d,
             /* killer_e, killer_f, killer_g, killer_h, */
                                                    SEARCH_SCOUT,
-                                                   node_count_serial, &result);
+                                                   node_count_serial, &result, NULL);
 
         if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
             || abortf || parallel_parent_aborted(node)) {
           continue;
-        }
-
-        if (result.type == MOVE_EVALUATED) {
-          node->legal_move_count++;
         }
 
         bool local_cutoff = false;

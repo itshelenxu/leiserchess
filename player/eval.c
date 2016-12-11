@@ -12,8 +12,9 @@
 // For example, casting 12.000000 to an int is sometimes 11 and sometimes 12.
 // Used in the h_squares_attackable heuristic.
 #define EPSILON 1e-7
-
 #define NUM_SENTINELS (ARR_SIZE - (BOARD_WIDTH * BOARD_WIDTH))
+#define between(c, a, b) ((((c) >= (a)) && ((c) <= (b))) || (((c) <= (a)) && ((c) >= (b))))
+
 // -----------------------------------------------------------------------------
 // Evaluation
 // -----------------------------------------------------------------------------
@@ -61,17 +62,18 @@ ev_score_t pcentral(fil_t f, rnk_t r) {
 }
 
 // returns true if c lies on or between a and b, which are not ordered
-bool between(int c, int a, int b) {
-  bool x = ((c >= a) && (c <= b)) || ((c <= a) && (c >= b));
-  return x;
-}
+// bool between(int c, int a, int b) {
+//   bool x = ((c >= a) && (c <= b)) || ((c <= a) && (c >= b));
+//   return x;
+// }
 
 // PBETWEEN heuristic: Bonus for Pawn at (f, r) in rectangle defined by Kings at the corners
 ev_score_t pbetween(position_t * p, fil_t f, rnk_t r) {
   bool is_between =
     between(f, fil_of(p->kloc[WHITE]), fil_of(p->kloc[BLACK])) &&
     between(r, rnk_of(p->kloc[WHITE]), rnk_of(p->kloc[BLACK]));
-  return is_between ? PBETWEEN : 0;
+  //return is_between ? PBETWEEN : 0;
+  return (-((int) is_between)) & PBETWEEN;
 }
 
 
@@ -516,9 +518,6 @@ score_t eval(position_t * p, bool verbose) {
         fil_t f = fil_of(p->ploc[c].squares[i]);
         rnk_t r = rnk_of(p->ploc[c].squares[i]);
 
-        // MATERIAL heuristic: Bonus for each Pawn
-        score[c] += PAWN_EV_VALUE;
-
         // PBETWEEN heuristic
         score[c] += pbetween(p, f, r);
 
@@ -560,7 +559,7 @@ score_t eval(position_t * p, bool verbose) {
               printf("MATERIAL bonus %d for %s Pawn on %s\n", bonus,
                      color_to_str(c), buf);
             }
-            score[c] += bonus;
+            // score[c] += bonus;
 
             // PBETWEEN heuristic
             bonus = pbetween(p, f, r);
@@ -605,6 +604,11 @@ score_t eval(position_t * p, bool verbose) {
       }
     }
   }
+
+  // MATERIAL heuristic: Bonus for each Pawn
+  score[0] += p->ploc[0].pawns_count * PAWN_EV_VALUE;
+  score[1] += p->ploc[1].pawns_count * PAWN_EV_VALUE;
+
 
   // Initialize laser map.
   // char laser_map[2][ARR_SIZE];
