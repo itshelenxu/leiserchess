@@ -43,7 +43,7 @@ char  VERSION[] = "1038";
 #define DEPTH_SEARCHED 10
 
 // number of moves we count in the opening
-#define OPENING_MOVES 10
+#define OPENING_MOVES 15
 // if the time remain is less than this fraction, dont start the next search iteration
 #define RATIO_FOR_TIMEOUT 0.5
 
@@ -246,8 +246,8 @@ void *entry_point(void *arg) {
       fprintf(scores_file, "%d\n", score); 
       // write the depth
       // fprintf(depths_file, "%d\n", curr_depth);
-    }
-    num_moves++;
+     }
+     num_moves++;
   }
   // This unlock will allow the main thread lock/unlock in UCIBeginSearch to
   // proceed

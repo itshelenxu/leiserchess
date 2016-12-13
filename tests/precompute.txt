@@ -9,7 +9,7 @@ adjudicate = 400
 
 player = table_gen
 invoke = ../player/leiserchess
-depth = 9
+depth = 8
 #depth = 10
 # fis = 120 1
 
