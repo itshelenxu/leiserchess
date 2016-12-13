@@ -253,9 +253,7 @@ leafEvalResult evaluate_as_leaf(searchNode *node, searchType_t type) {
 
 void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
                                   move_t killer_b, move_t killer_c,
-                                  move_t killer_d, /* , move_t killer_e,
-                                 move_t killer_f, move_t killer_g,
-                                move_t killer_h,*/ searchType_t type,
+                                  move_t killer_d, searchType_t type,
                                   uint64_t *node_count_serial,
                                   moveEvaluationResult *result,
                                   simple_mutex_t* mutex) {
