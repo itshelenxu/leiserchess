@@ -81,12 +81,6 @@ static score_t scout_search(searchNode * node, int depth,
   move_t killer_b = killer[KMT(node->ply, 1)];
   move_t killer_c = killer[KMT(node->ply, 2)];
   move_t killer_d = killer[KMT(node->ply, 3)];
-  /*
-  move_t killer_e = killer[KMT(node->ply, 4)];
-  move_t killer_f = killer[KMT(node->ply, 5)];
-  move_t killer_g = killer[KMT(node->ply, 6)];
-  move_t killer_h = killer[KMT(node->ply, 7)];
-  */
 
   // Store the sorted move list on the stack.
   // MAX_NUM_MOVES is all that we need.

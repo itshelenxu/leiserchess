@@ -34,6 +34,15 @@ char  VERSION[] = "1038";
 #define INF_TIME 99999999999.0
 #define INF_DEPTH 999       // if user does not specify a depth, use 999
 
+#define scores "scores.txt"
+#define moves "moves.txt"
+#define hashes "hash.txt"
+
+// depth pre-stored in search
+#define DEPTH_SEARCHED 10
+
+// number of moves we count in the opening
+#define OPENING_MOVES 10
 // if the time remain is less than this fraction, dont start the next search iteration
 #define RATIO_FOR_TIMEOUT 0.5
 
@@ -43,6 +52,10 @@ char  VERSION[] = "1038";
 
 static FILE *OUT;
 static FILE *IN;
+
+static FILE *moves_file;
+static FILE *hashes_file;
+static FILE *scores_file;
 
 // Options for UCI interface
 
@@ -166,6 +179,8 @@ typedef enum {
 // -----------------------------------------------------------------------------
 // UCI search (top level scout search call)
 // -----------------------------------------------------------------------------
+// keep track of which move in the game were are on
+static int num_moves;
 
 static move_t bestMoveSoFar;
 static char theMove[MAX_CHARS_IN_MOVE];
@@ -197,10 +212,11 @@ void *entry_point(void *arg) {
 
   init_tics();
 
+  score_t score;
   for (int d = 1; d <= depth; d++) {  // Iterative deepening
     reset_abort();
 
-    searchRoot(p, -INF, INF, d, 0, subpv, &node_count_serial,
+    score = searchRoot(p, -INF, INF, d, 0, subpv, &node_count_serial,
                 OUT);
 
     et = elapsed_time();
@@ -215,7 +231,17 @@ void *entry_point(void *arg) {
     // don't start iteration that you cannot complete
     if (et > tme * RATIO_FOR_TIMEOUT) break;
   }
-
+  // fprintf(OUT, "num moves: %d\n", num_moves);
+  if (num_moves < OPENING_MOVES) {
+    // write move, hash, score?
+    // uint32_t
+    fprintf(moves_file, "%u\n", bestMoveSoFar);
+    // hash of the position = uint64_t
+    fprintf(hashes_file, "%lu\n", compute_zob_key(p));
+    // store the scores
+    fprintf(scores_file, "%d\n", score); 
+  }
+  num_moves++;
   // This unlock will allow the main thread lock/unlock in UCIBeginSearch to
   // proceed
   pthread_mutex_unlock(&entry_mutex);
@@ -233,7 +259,6 @@ void UciBeginSearch(position_t *p, int depth, double tme) {
   args.tme = tme;
   node_count_serial = 0;
   entry_point(&args);
-
   char bms[MAX_CHARS_IN_MOVE];
   move_to_str(bestMoveSoFar, bms, MAX_CHARS_IN_MOVE);
   snprintf(theMove, MAX_CHARS_IN_MOVE, "%s", bms);
@@ -404,6 +429,12 @@ int main(int argc, char *argv[]) {
   setbuf(stdin, NULL);
 
   OUT = stdout;
+
+  // open files for writing
+  moves_file = fopen(moves, "a");
+  hashes_file = fopen(hashes, "a");
+  scores_file = fopen(scores, "a");
+  num_moves = 0;
 
   if (argc > 1) {
     IN = fopen(argv[1], "r");
@@ -688,7 +719,7 @@ int main(int argc, char *argv[]) {
           UciBeginSearch(&gme[ix], depth, INF_TIME);
         } else {
           goal = tme * 0.02;   // use about 1/50 of main time
-          goal += inc * 0.80;  // use most of increment
+          goal += inc; // * 0.80;  // use most of increment
           // sanity check,  make sure that we don't run ourselves too low
           if (goal*10 > tme) goal = tme / 10.0;
           UciBeginSearch(&gme[ix], INF_DEPTH, goal);
@@ -715,8 +746,14 @@ int main(int argc, char *argv[]) {
       printf("Illegal command.  Use 'help' to see possible options.\n");
       continue;
     }
+
   }
   tt_free_hashtable();
+
+  // end
+  fclose(moves_file);
+  fclose(hashes_file);
+  fclose(scores_file);
 
   return 0;
 }
