@@ -38,7 +38,10 @@ char  VERSION[] = "1038";
 #define scores "scores.txt"
 #define moves "moves.txt"
 #define hashes "hash.txt"
+
+// whether or not we are generating tables
 #define PRECOMPUTE 1 
+
 // depth pre-stored in search
 #define DEPTH_SEARCHED 10
 
@@ -47,6 +50,8 @@ char  VERSION[] = "1038";
 // if the time remain is less than this fraction, dont start the next search iteration
 #define RATIO_FOR_TIMEOUT 0.5
 
+// use preloaded tables y/n
+#define USE_PRELOAD 0
 // -----------------------------------------------------------------------------
 // file I/O
 // -----------------------------------------------------------------------------
@@ -195,6 +200,16 @@ typedef struct {
   double tme;
 } entry_point_args;
 
+// lookup in tt
+bool preload_lookup(position_t *p) {
+  ttRec_t *rec = tt_hashtable_get(p->key);
+  if (rec && tt_is_precomputed(rec)) {
+    bestMoveSoFar = tt_move_of(rec);
+    return true;
+  }
+  return false;
+}
+
 void *entry_point(void *arg) {
   move_t subpv[MAX_PLY_IN_SEARCH];
 
@@ -213,41 +228,45 @@ void *entry_point(void *arg) {
 
   init_tics();
 
-  score_t score;
-  int curr_depth;
-  for (int d = 1; d <= depth; d++) {  // Iterative deepening
-    reset_abort();
+  // lookup in tt for preloaded values
+  if (!USE_PRELOAD && !preload_lookup(p)) {
 
-    score = searchRoot(p, -INF, INF, d, 0, subpv, &node_count_serial,
+    // if not found, continue as normal
+    score_t score;
+    int curr_depth;
+    for (int d = 1; d <= depth; d++) {  // Iterative deepening
+      reset_abort();
+
+      score = searchRoot(p, -INF, INF, d, 0, subpv, &node_count_serial,
                 OUT);
 
-    et = elapsed_time();
-    bestMoveSoFar = subpv[0];
-    curr_depth = d;
+      et = elapsed_time();
+      bestMoveSoFar = subpv[0];
+      curr_depth = d;
 
-    if (!should_abort()) {
-      // print something?
-    } else {
-      break;
+      if (!should_abort()) {
+        // print something?
+      } else {
+        break;
+      }
+      // don't start iteration that you cannot complete
+      if (et > tme * RATIO_FOR_TIMEOUT) break;
     }
-
-    // don't start iteration that you cannot complete
-    if (et > tme * RATIO_FOR_TIMEOUT) break;
-  }
-
-  if (PRECOMPUTE) {
-    if (num_moves < OPENING_MOVES) {
-      // write move, hash, score?
-      // uint32_t
-      fprintf(moves_file, "%u\n", bestMoveSoFar);
-      // hash of the position = uint64_t
-      fprintf(hashes_file, "%lu\n", compute_zob_key(p));
-      // store the scores
-      fprintf(scores_file, "%d\n", score); 
-      // write the depth
-      // fprintf(depths_file, "%d\n", curr_depth);
-     }
-     num_moves++;
+ 
+    if (PRECOMPUTE) {
+      if (num_moves < OPENING_MOVES) {
+        // write move, hash, score?
+        // uint32_t
+        fprintf(moves_file, "%u\n", bestMoveSoFar);
+        // hash of the position = uint64_t
+        fprintf(hashes_file, "%lu\n", compute_zob_key(p));
+        // store the scores
+        fprintf(scores_file, "%d\n", score); 
+        // write the depth
+        // fprintf(depths_file, "%d\n", curr_depth);
+      }
+      num_moves++;
+    }
   }
   // This unlock will allow the main thread lock/unlock in UCIBeginSearch to
   // proceed
