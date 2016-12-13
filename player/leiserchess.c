@@ -34,10 +34,11 @@ char  VERSION[] = "1038";
 #define INF_TIME 99999999999.0
 #define INF_DEPTH 999       // if user does not specify a depth, use 999
 
+#define depths "depths.txt"
 #define scores "scores.txt"
 #define moves "moves.txt"
 #define hashes "hash.txt"
-
+#define PRECOMPUTE 1 
 // depth pre-stored in search
 #define DEPTH_SEARCHED 10
 
@@ -56,7 +57,7 @@ static FILE *IN;
 static FILE *moves_file;
 static FILE *hashes_file;
 static FILE *scores_file;
-
+static FILE *depths_file;
 // Options for UCI interface
 
 // defined in search.c
@@ -213,6 +214,7 @@ void *entry_point(void *arg) {
   init_tics();
 
   score_t score;
+  int curr_depth;
   for (int d = 1; d <= depth; d++) {  // Iterative deepening
     reset_abort();
 
@@ -221,6 +223,7 @@ void *entry_point(void *arg) {
 
     et = elapsed_time();
     bestMoveSoFar = subpv[0];
+    curr_depth = d;
 
     if (!should_abort()) {
       // print something?
@@ -231,17 +234,21 @@ void *entry_point(void *arg) {
     // don't start iteration that you cannot complete
     if (et > tme * RATIO_FOR_TIMEOUT) break;
   }
-  // fprintf(OUT, "num moves: %d\n", num_moves);
-  if (num_moves < OPENING_MOVES) {
-    // write move, hash, score?
-    // uint32_t
-    fprintf(moves_file, "%u\n", bestMoveSoFar);
-    // hash of the position = uint64_t
-    fprintf(hashes_file, "%lu\n", compute_zob_key(p));
-    // store the scores
-    fprintf(scores_file, "%d\n", score); 
+
+  if (PRECOMPUTE) {
+    if (num_moves < OPENING_MOVES) {
+      // write move, hash, score?
+      // uint32_t
+      fprintf(moves_file, "%u\n", bestMoveSoFar);
+      // hash of the position = uint64_t
+      fprintf(hashes_file, "%lu\n", compute_zob_key(p));
+      // store the scores
+      fprintf(scores_file, "%d\n", score); 
+      // write the depth
+      // fprintf(depths_file, "%d\n", curr_depth);
+    }
+    num_moves++;
   }
-  num_moves++;
   // This unlock will allow the main thread lock/unlock in UCIBeginSearch to
   // proceed
   pthread_mutex_unlock(&entry_mutex);
@@ -431,10 +438,14 @@ int main(int argc, char *argv[]) {
   OUT = stdout;
 
   // open files for writing
-  moves_file = fopen(moves, "a");
-  hashes_file = fopen(hashes, "a");
-  scores_file = fopen(scores, "a");
-  num_moves = 0;
+  
+  if (PRECOMPUTE) {
+    // depths_file = fopen(depths, "a");
+    moves_file = fopen(moves, "a");
+    hashes_file = fopen(hashes, "a");
+    scores_file = fopen(scores, "a");
+    num_moves = 0;
+  }
 
   if (argc > 1) {
     IN = fopen(argv[1], "r");
@@ -751,9 +762,11 @@ int main(int argc, char *argv[]) {
   tt_free_hashtable();
 
   // end
-  fclose(moves_file);
-  fclose(hashes_file);
-  fclose(scores_file);
-
+  if (PRECOMPUTE) {
+    // fclose(depths_file);
+    fclose(moves_file);
+    fclose(hashes_file);
+    fclose(scores_file);
+  }
   return 0;
 }

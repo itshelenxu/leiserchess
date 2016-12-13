@@ -1,0 +1,19 @@
+cpus = 2
+book = ../tests/book.dta
+game_rounds = 1000
+title = table_gen
+adjudicate = 400
+
+# now we have the player definitions
+# --
+
+player = table_gen
+invoke = ../player/leiserchess
+depth = 9
+#depth = 10
+# fis = 120 1
+
+player = beta2
+invoke = ../player/beta2_10
+# depth = 1
+fis = 60 0.5
