@@ -27,7 +27,7 @@ struct ttRec {
 
 
 // each set is a 4-way set-associative cache and contains 4 records
-#define RECORDS_PER_SET 1
+#define RECORDS_PER_SET 4
 typedef struct {
   ttRec_t records[RECORDS_PER_SET];
 } ttSet_t;
