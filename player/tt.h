@@ -13,12 +13,13 @@
 
 #include "./move_gen.h"
 #include "./search.h"
-
+// #include "./preload.h"
 
 typedef enum {
   UPPER,
   LOWER,
-  EXACT
+  EXACT,
+  PRECOMPUTED
 } ttBound_t;
 
 // Just forward declarations
@@ -47,4 +48,7 @@ score_t tt_adjust_score_from_hashtable(ttRec_t *rec, int ply);
 score_t tt_adjust_score_for_hashtable(score_t score, int ply);
 bool tt_is_usable(ttRec_t *tt, int depth, score_t beta);
 
+// preload tables
+void tt_load();
+bool tt_is_precomputed(ttRec_t *rec);
 #endif  // TT_H

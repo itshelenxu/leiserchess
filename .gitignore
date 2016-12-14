@@ -13,3 +13,14 @@ perf.data*
 *.jar
 player/cpu*
 player/profiling*
+player/tmp*
+player/kmt*
+player/beta*
+player/lmr*
+player/lookup*
+autotester/new*
+player/new*
+*.swp
+tmp
+player/*.txt
+autotester/*.txt

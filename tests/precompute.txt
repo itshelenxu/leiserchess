@@ -1,0 +1,20 @@
+cpus = 2
+book = ../tests/book.dta
+game_rounds = 400
+title = table_gen
+adjudicate = 400
+
+# now we have the player definitions
+# --
+
+player = no_lookup
+invoke = ../player/tt4
+fis = 60 0.5
+
+player = lookup_1
+invoke = ../player/lookup_firstmove
+fis = 60 0.5
+
+player = lookup_all
+invoke = ../player/lookup_v1all
+fis = 60 0.5

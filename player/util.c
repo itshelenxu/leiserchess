@@ -20,6 +20,7 @@ void debug_log(int log_level, const char *errstr, ...) {
     va_end(arg_list);
     fprintf(stderr, "\n");
   }
+  
 }
 
 double milliseconds() {

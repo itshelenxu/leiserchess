@@ -3,7 +3,7 @@ import sys
 total = len(sys.argv)
 cmdargs = sys.argv
 os.system("make");
-#os.system("rm ../tests/basic.pgn")
+os.system("rm ../tests/basic.pgn")
 if total == 2:
     pgnname = ""
     if cmdargs[1].endswith(".txt"):

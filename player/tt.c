@@ -5,7 +5,7 @@
 // https://chessprogramming.wikispaces.com/Transposition+Table
 
 #include "./tt.h"
-
+#include "./preload.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include "./tbassert.h"
@@ -89,6 +89,7 @@ void tt_resize_hashtable(int size_in_meg) {
 void tt_make_hashtable(int size_in_meg) {
   hashtable.tt_set = NULL;
   tt_resize_hashtable(size_in_meg);
+  tt_load();  // load precomputed values
 }
 
 void tt_free_hashtable() {
@@ -220,6 +221,10 @@ bool tt_is_usable(ttRec_t *tt, int depth, score_t beta) {
   if (tt->quality < depth) {
     return false;
   }
+
+  // if it was precomputed, we can use it
+  if (tt->bound == PRECOMPUTED) { return true; }
+
   // otherwise check whether the score falls within the bounds
   if ((tt->bound == LOWER) && tt->score >= beta) {
     return true;
@@ -231,3 +236,14 @@ bool tt_is_usable(ttRec_t *tt, int depth, score_t beta) {
   return false;
 }
 
+// preload TT with precomputed moves
+void tt_load() {
+  for (int i = 0; i < NUM_PRECOMP; i++) {
+    tt_hashtable_put(hash_arr[i], PRECOMP_DEPTH, score_arr[i], PRECOMPUTED, move_arr[i]);
+  }
+}
+
+// preloade y/n
+inline bool tt_is_precomputed(ttRec_t *rec) {
+  return rec->bound == PRECOMPUTED;
+}

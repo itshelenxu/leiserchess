@@ -34,9 +34,24 @@ char  VERSION[] = "1038";
 #define INF_TIME 99999999999.0
 #define INF_DEPTH 999       // if user does not specify a depth, use 999
 
+#define depths "depths.txt"
+#define scores "scores.txt"
+#define moves "moves.txt"
+#define hashes "hash.txt"
+
+// whether or not we are generating tables
+#define PRECOMPUTE 0 
+
+// depth pre-stored in search
+#define DEPTH_SEARCHED 10
+
+// number of moves we count in the opening
+#define OPENING_MOVES 15
 // if the time remain is less than this fraction, dont start the next search iteration
 #define RATIO_FOR_TIMEOUT 0.5
 
+// use preloaded tables y/n
+#define USE_PRELOAD 1 
 // -----------------------------------------------------------------------------
 // file I/O
 // -----------------------------------------------------------------------------
@@ -44,6 +59,9 @@ char  VERSION[] = "1038";
 static FILE *OUT;
 static FILE *IN;
 
+static FILE *moves_file;
+static FILE *hashes_file;
+static FILE *scores_file;
 // Options for UCI interface
 
 // defined in search.c
@@ -166,6 +184,8 @@ typedef enum {
 // -----------------------------------------------------------------------------
 // UCI search (top level scout search call)
 // -----------------------------------------------------------------------------
+// keep track of which move in the game were are on
+static int num_moves;
 
 static move_t bestMoveSoFar;
 static char theMove[MAX_CHARS_IN_MOVE];
@@ -178,6 +198,17 @@ typedef struct {
   int depth;
   double tme;
 } entry_point_args;
+
+// lookup in tt
+bool preload_lookup(position_t *p) {
+  ttRec_t *rec = tt_hashtable_get(p->key);
+  if (rec && tt_is_precomputed(rec)) {
+
+    bestMoveSoFar = tt_move_of(rec);
+    return true;
+  }
+  return false;
+}
 
 void *entry_point(void *arg) {
   move_t subpv[MAX_PLY_IN_SEARCH];
@@ -197,25 +228,47 @@ void *entry_point(void *arg) {
 
   init_tics();
 
-  for (int d = 1; d <= depth; d++) {  // Iterative deepening
-    reset_abort();
+  // lookup in tt for preloaded values
+  if (!preload_lookup(p)) {
 
-    searchRoot(p, -INF, INF, d, 0, subpv, &node_count_serial,
+    // if not found, continue as normal
+    score_t score;
+    int curr_depth;
+    for (int d = 1; d <= depth; d++) {  // Iterative deepening
+      reset_abort();
+
+      score = searchRoot(p, -INF, INF, d, 0, subpv, &node_count_serial,
                 OUT);
 
-    et = elapsed_time();
-    bestMoveSoFar = subpv[0];
+      et = elapsed_time();
+      bestMoveSoFar = subpv[0];
+      curr_depth = d;
 
-    if (!should_abort()) {
-      // print something?
-    } else {
-      break;
+      if (!should_abort()) {
+        // print something?
+      } else {
+        break;
+      }
+      // don't start iteration that you cannot complete
+      if (et > tme * RATIO_FOR_TIMEOUT) break;
     }
 
-    // don't start iteration that you cannot complete
-    if (et > tme * RATIO_FOR_TIMEOUT) break;
+     
+    if (PRECOMPUTE) {
+      if (num_moves < OPENING_MOVES) {
+        printf("asdf\n");
+        // write move, hash, score?
+        // uint32_t
+        fprintf(moves_file, "%u\n", bestMoveSoFar);
+        // hash of the position = uint64_t
+        fprintf(hashes_file, "%lu\n", compute_zob_key(p));
+        // store the scores
+        fprintf(scores_file, "%d\n", score); 
+        // write the depth
+      }
+      num_moves++;
+    }
   }
-
   // This unlock will allow the main thread lock/unlock in UCIBeginSearch to
   // proceed
   pthread_mutex_unlock(&entry_mutex);
@@ -227,16 +280,25 @@ void *entry_point(void *arg) {
 void UciBeginSearch(position_t *p, int depth, double tme) {
   pthread_mutex_lock(&entry_mutex);  // setup for the barrier
 
+  char bms[MAX_CHARS_IN_MOVE];
+  // printf("hash of start: %lu\n", compute_zob_key(p));
+  // king h0h1
+  // move_of(type, rot, src, dest)
+  /*
+  move_t first_move = move_of(KING, (rot_t) 3, square_of(7, 0), square_of(7,0));
+  fprintf(OUT, "first move: %u\n", first_move);
+  move_to_str(first_move, bms, MAX_CHARS_IN_MOVE);
+  fprintf(OUT, "first move: %s\n", bms);
+  */
   entry_point_args args;
   args.depth = depth;
   args.p = p;
   args.tme = tme;
   node_count_serial = 0;
   entry_point(&args);
-
-  char bms[MAX_CHARS_IN_MOVE];
   move_to_str(bestMoveSoFar, bms, MAX_CHARS_IN_MOVE);
   snprintf(theMove, MAX_CHARS_IN_MOVE, "%s", bms);
+  // fprintf(OUT, "best move int: %u\n", bestMoveSoFar);
   fprintf(OUT, "bestmove %s\n", bms);
   return;
 }
@@ -404,6 +466,15 @@ int main(int argc, char *argv[]) {
   setbuf(stdin, NULL);
 
   OUT = stdout;
+
+  // open files for writing
+  
+  if (PRECOMPUTE) {
+    moves_file = fopen(moves, "a");
+    hashes_file = fopen(hashes, "a");
+    scores_file = fopen(scores, "a");
+    num_moves = 0;
+  }
 
   if (argc > 1) {
     IN = fopen(argv[1], "r");
@@ -715,8 +786,16 @@ int main(int argc, char *argv[]) {
       printf("Illegal command.  Use 'help' to see possible options.\n");
       continue;
     }
+
   }
   tt_free_hashtable();
 
+  // end
+  if (PRECOMPUTE) {
+    // fclose(depths_file);
+    fclose(moves_file);
+    fclose(hashes_file);
+    fclose(scores_file);
+  }
   return 0;
 }
