@@ -47,7 +47,7 @@ static sort_key_t sort_key(sortable_move_t mv) {
 }
 */
 
-static void set_sort_key(sortable_move_t *mv, sort_key_t key) {
+static inline void set_sort_key(sortable_move_t *mv, sort_key_t key) {
   // sort keys must not exceed SORT_MASK
   //  assert ((0 <= key) && (key <= SORT_MASK));
   *mv = ((((uint64_t) key) & SORT_MASK) << SORT_SHIFT) |
@@ -162,18 +162,18 @@ static score_t get_game_over_score(victims_t victims, int pov, int ply) {
   return score;
 }
 
-static void getPV(move_t *pv, char *buf, size_t bufsize) {
-  buf[0] = 0;
+// static void getPV(move_t *pv, char *buf, size_t bufsize) {
+//   buf[0] = 0;
 
-  for (int i = 0; i < (MAX_PLY_IN_SEARCH - 1) && pv[i] != 0; i++) {
-    char a[MAX_CHARS_IN_MOVE];
-    move_to_str(pv[i], a, MAX_CHARS_IN_MOVE);
-    if (i != 0) {
-      strncat(buf, " ", bufsize - strlen(buf) - 1);  // - 1, for the terminating '\0'
-    }
-    strncat(buf, a, bufsize - strlen(buf) - 1);  // - 1, for the terminating '\0'
-  }
-}
+//   for (int i = 0; i < (MAX_PLY_IN_SEARCH - 1) && pv[i] != 0; i++) {
+//     char a[MAX_CHARS_IN_MOVE];
+//     move_to_str(pv[i], a, MAX_CHARS_IN_MOVE);
+//     if (i != 0) {
+//       strncat(buf, " ", bufsize - strlen(buf) - 1);  // - 1, for the terminating '\0'
+//     }
+//     strncat(buf, a, bufsize - strlen(buf) - 1);  // - 1, for the terminating '\0'
+//   }
+// }
 
 static void print_move_info(move_t mv, int ply) {
   char buf[MAX_CHARS_IN_MOVE];
@@ -260,7 +260,8 @@ void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
   int ext = 0;  // extensions
   bool blunder = false;  // shoot our own piece
   // moveEvaluationResult result;
-  result->next_node.subpv[0] = 0;
+  //result->next_node.subpv[0] = 0;
+  result->next_node.optimal_move = 0;
   result->next_node.parent = node;
 
   // Make the move, and get any victim pieces.
@@ -317,7 +318,7 @@ void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
     return;
   }
 
-  // Extend the search-depth by 1 if we captured a piece, since that means the
+  // Extend the search-depth by 1 if we captured piece, since that means the
   // move was interesting.
   //
   // https://chessprogramming.wikispaces.com/Capture+Extensions
@@ -429,12 +430,12 @@ bool search_process_score(searchNode *node, move_t mv, int mv_index,
   if (result->score > node->best_score) {
     node->best_score = result->score;
     node->best_move_index = mv_index;
-    node->subpv[0] = mv;
+    node->optimal_move = mv;
 
     // write best move into right position in PV buffer.
-    memcpy(node->subpv + 1, result->next_node.subpv,
-           sizeof(move_t) * (MAX_PLY_IN_SEARCH - 1));
-    node->subpv[MAX_PLY_IN_SEARCH - 1] = 0;
+    // memcpy(node->subpv + 1, result->next_node.subpv,
+    //        sizeof(move_t) * (MAX_PLY_IN_SEARCH - 1));
+    // node->subpv[MAX_PLY_IN_SEARCH - 1] = 0;
 
     if (type != SEARCH_SCOUT && result->score > node->alpha) {
       node->alpha = result->score;

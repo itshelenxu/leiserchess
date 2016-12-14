@@ -12,8 +12,8 @@ ifeq ($(PARALLEL),1)
 	#
 	# switch -fdetach to -ftapir to enable Tapir optimization passes for better
 	# performance.
-	CFLAGS := -std=gnu99 -Wall -g -ftapir # -fdetach
-	LDFLAGS= -Wall -lm -lrt -ldl -lpthread -lcilkrts
+	CFLAGS := -std=gnu99 -Wall -g -march=core-avx2 -ftapir # -fdetach
+	LDFLAGS= -Wall -lm -lrt -ldl -lpthread -march=core-avx2 -lcilkrts
 else
 ifeq ($(UNAME),Darwin)
 	OS_TYPE := Mac

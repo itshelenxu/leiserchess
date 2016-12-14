@@ -18,7 +18,7 @@ inline void mark_laser_path(position_t *p, color_t c, char *laser_map,
 
 void mark_laser_path_with_heuristics(
     position_t *p, color_t c, char *laser_map, char mark_mask,
-    double* squares_attackable,
+    float* squares_attackable,
     int* num_enemy_pinned_pawns);
 
 int generate_pinned_pawn_list(position_t *p, color_t c, square_t* pinned_pawn_list);
