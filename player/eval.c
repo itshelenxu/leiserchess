@@ -16,9 +16,6 @@
 #define between(c, a, b) ((((c) >= (a)) && ((c) <= (b))) || (((c) <= (a)) && ((c) >= (b))))
 #define MIN_SQUARE_VALUE 68
 
-#define MINIMUM(a,b) (((a)<(b))?(a):(b))
-#define MAXIMUM(a,b) (((a)>(b))?(a):(b))
-
 // -----------------------------------------------------------------------------
 // Evaluation
 // -----------------------------------------------------------------------------
@@ -587,50 +584,15 @@ float h_squares_attackable(position_t * p, color_t c, square_t* piece_list, int 
 
   float h_attackable = EPSILON;
 
-  int vertex_count = piece_count; 
-  if (piece_list[piece_count] != -1) {
-    vertex_count++;
+  for (int i = 0; i < piece_count; i++) {
+    h_attackable += h_dist(piece_list[i], o_king_sq);
   }
 
-  if (vertex_count == 1) {
-    h_attackable += h_dist(piece_list[0], o_king_sq);
-  } else if (vertex_count == 2) {
-    int file1 = fil_of(piece_list[0]);
-    int file2 = fil_of(piece_list[1]);
-    if (file1 == file2) {
-      int max_value = MAXIMUM(piece_list[0], piece_list[1]);
-      for (int i = MINIMUM(piece_list[0], piece_list[1]); i <= max_value; i++) {
-        h_attackable += h_dist(i, o_king_sq);
-      }
-    } else {
-      int max_value = MAXIMUM(piece_list[0], piece_list[1]);
-      for (int i = MINIMUM(piece_list[0], piece_list[1]); i <= max_value; i +=10) {
-        h_attackable += h_dist(i, o_king_sq);
-      }
-    }
-  } else {
-    for (int i = 0; i < vertex_count - 1; i++) {
-      int file1 = fil_of(piece_list[i]);
-      int file2 = fil_of(piece_list[i + 1]);
-      if (file1 == file2) {
-        int max_value = MAXIMUM(piece_list[i], piece_list[i+1]);
-        for (int j = MINIMUM(piece_list[i], piece_list[i+1]); j < max_value; j++) {
-          h_attackable += h_dist(j, o_king_sq);
-        }
-      } else {
-        int max_value = MAXIMUM(piece_list[i], piece_list[i+1]);
-        for (int j = MINIMUM(piece_list[i], piece_list[i+1]); j < max_value; j += 10) {
-          h_attackable += h_dist(j, o_king_sq);
-        }
-      }
-    }
-    h_attackable += h_dist(piece_list[vertex_count - 1], o_king_sq);
-  }
   return h_attackable;
 }
 
 // Static evaluation.  Returns score
-score_t eval(position_t * p, bool verbose) {
+/*score_t eval(position_t * p, bool verbose) {
   // seed rand_r with a value of 1, as per
   // http://linux.die.net/man/3/rand_r
   static __thread unsigned int seed = 1;
@@ -650,6 +612,7 @@ score_t eval(position_t * p, bool verbose) {
 
       // PCENTRAL heuristic
       score[c] += pcentral_table[f][r];
+      tbassert(pcentral_table[f][r] == pcentral(f, r), "\n");
     }
 
     // King heuristics
@@ -670,8 +633,9 @@ score_t eval(position_t * p, bool verbose) {
 
 
   // Initialize piece_list along the laser path.
-  square_t white_piece_list[MAX_NUM_PIECES + 1];
-  square_t black_piece_list[MAX_NUM_PIECES + 1];
+  square_t white_piece_list[MAX_NUM_PIECES];
+  square_t black_piece_list[MAX_NUM_PIECES];
+
   int white_piece_count = generate_pieces_along_laser_path(p, WHITE, white_piece_list);
   int black_piece_count = generate_pieces_along_laser_path(p, BLACK, black_piece_list);
 
@@ -680,12 +644,12 @@ score_t eval(position_t * p, bool verbose) {
   score[BLACK] += HATTACK * (int) h_squares_attackable(p, BLACK, black_piece_list, black_piece_count);
 
   // MOBILITY heuristic
-  score[WHITE] += MOBILITY * king_mobility(p, WHITE, black_piece_list, black_piece_count);
-  score[BLACK] += MOBILITY * king_mobility(p, BLACK, white_piece_list, white_piece_count);
+  score[WHITE] += MOBILITY * king_mobility(p, WHITE, white_piece_list, white_piece_count);
+  score[BLACK] += MOBILITY * king_mobility(p, BLACK, black_piece_list, black_piece_count);
 
   // PAWNPIN heuristic --- is a pawn immobilized by the enemy laser.
-  score[WHITE] += PAWNPIN * pawnpin(p, WHITE, black_piece_list, black_piece_count);
-  score[BLACK] += PAWNPIN * pawnpin(p, BLACK, white_piece_list, white_piece_count);
+  score[WHITE] += PAWNPIN * pawnpin(p, WHITE, white_piece_list, white_piece_count);
+  score[BLACK] += PAWNPIN * pawnpin(p, BLACK, black_piece_list, black_piece_count);
 
   // score from WHITE point of view
   ev_score_t tot = score[WHITE] - score[BLACK];
@@ -700,10 +664,10 @@ score_t eval(position_t * p, bool verbose) {
   }
 
   return tot / EV_SCORE_RATIO;
-}
+}*/
 
 // Static evaluation.  Returns score
-/*score_t eval(position_t * p, bool verbose) {
+score_t eval(position_t * p, bool verbose) {
 
     // seed rand_r with a value of 1, as per
   // http://linux.die.net/man/3/rand_r
@@ -808,4 +772,3 @@ score_t eval(position_t * p, bool verbose) {
 
   return tot / EV_SCORE_RATIO;
 }
-*/
