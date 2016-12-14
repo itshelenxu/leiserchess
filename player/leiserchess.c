@@ -285,7 +285,7 @@ void UciBeginSearch(position_t *p, int depth, double tme) {
   // king h0h1
   // move_of(type, rot, src, dest)
   /*
-  move_t first_move = move_of(KING, (rot_t) 0, square_of(7, 0), square_of(7,1));
+  move_t first_move = move_of(KING, (rot_t) 3, square_of(7, 0), square_of(7,0));
   fprintf(OUT, "first move: %u\n", first_move);
   move_to_str(first_move, bms, MAX_CHARS_IN_MOVE);
   fprintf(OUT, "first move: %s\n", bms);
