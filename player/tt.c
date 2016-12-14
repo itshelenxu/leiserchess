@@ -5,7 +5,7 @@
 // https://chessprogramming.wikispaces.com/Transposition+Table
 
 #include "./tt.h"
-
+#include "./preload.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include "./tbassert.h"
@@ -240,7 +240,7 @@ bool tt_is_usable(ttRec_t *tt, int depth, score_t beta) {
 void tt_load() {
   for (int i = 0; i < NUM_PRECOMP; i++) {
     tt_hashtable_put(hash_arr[i], PRECOMP_DEPTH, score_arr[i], PRECOMPUTED, move_arr[i]);
-  }  
+  }
 }
 
 // preloade y/n

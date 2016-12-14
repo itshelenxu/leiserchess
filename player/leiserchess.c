@@ -40,7 +40,7 @@ char  VERSION[] = "1038";
 #define hashes "hash.txt"
 
 // whether or not we are generating tables
-#define PRECOMPUTE 1 
+#define PRECOMPUTE 0 
 
 // depth pre-stored in search
 #define DEPTH_SEARCHED 10
@@ -51,7 +51,7 @@ char  VERSION[] = "1038";
 #define RATIO_FOR_TIMEOUT 0.5
 
 // use preloaded tables y/n
-#define USE_PRELOAD 0
+#define USE_PRELOAD 1 
 // -----------------------------------------------------------------------------
 // file I/O
 // -----------------------------------------------------------------------------
@@ -62,7 +62,6 @@ static FILE *IN;
 static FILE *moves_file;
 static FILE *hashes_file;
 static FILE *scores_file;
-static FILE *depths_file;
 // Options for UCI interface
 
 // defined in search.c
@@ -204,6 +203,7 @@ typedef struct {
 bool preload_lookup(position_t *p) {
   ttRec_t *rec = tt_hashtable_get(p->key);
   if (rec && tt_is_precomputed(rec)) {
+
     bestMoveSoFar = tt_move_of(rec);
     return true;
   }
@@ -229,7 +229,7 @@ void *entry_point(void *arg) {
   init_tics();
 
   // lookup in tt for preloaded values
-  if (!USE_PRELOAD && !preload_lookup(p)) {
+  if (!preload_lookup(p)) {
 
     // if not found, continue as normal
     score_t score;
@@ -252,9 +252,11 @@ void *entry_point(void *arg) {
       // don't start iteration that you cannot complete
       if (et > tme * RATIO_FOR_TIMEOUT) break;
     }
- 
+
+     
     if (PRECOMPUTE) {
       if (num_moves < OPENING_MOVES) {
+        printf("asdf\n");
         // write move, hash, score?
         // uint32_t
         fprintf(moves_file, "%u\n", bestMoveSoFar);
@@ -263,7 +265,6 @@ void *entry_point(void *arg) {
         // store the scores
         fprintf(scores_file, "%d\n", score); 
         // write the depth
-        // fprintf(depths_file, "%d\n", curr_depth);
       }
       num_moves++;
     }
@@ -279,15 +280,25 @@ void *entry_point(void *arg) {
 void UciBeginSearch(position_t *p, int depth, double tme) {
   pthread_mutex_lock(&entry_mutex);  // setup for the barrier
 
+  char bms[MAX_CHARS_IN_MOVE];
+  // printf("hash of start: %lu\n", compute_zob_key(p));
+  // king h0h1
+  // move_of(type, rot, src, dest)
+  /*
+  move_t first_move = move_of(KING, (rot_t) 0, square_of(7, 0), square_of(7,1));
+  fprintf(OUT, "first move: %u\n", first_move);
+  move_to_str(first_move, bms, MAX_CHARS_IN_MOVE);
+  fprintf(OUT, "first move: %s\n", bms);
+  */
   entry_point_args args;
   args.depth = depth;
   args.p = p;
   args.tme = tme;
   node_count_serial = 0;
   entry_point(&args);
-  char bms[MAX_CHARS_IN_MOVE];
   move_to_str(bestMoveSoFar, bms, MAX_CHARS_IN_MOVE);
   snprintf(theMove, MAX_CHARS_IN_MOVE, "%s", bms);
+  // fprintf(OUT, "best move int: %u\n", bestMoveSoFar);
   fprintf(OUT, "bestmove %s\n", bms);
   return;
 }
@@ -459,7 +470,6 @@ int main(int argc, char *argv[]) {
   // open files for writing
   
   if (PRECOMPUTE) {
-    // depths_file = fopen(depths, "a");
     moves_file = fopen(moves, "a");
     hashes_file = fopen(hashes, "a");
     scores_file = fopen(scores, "a");
