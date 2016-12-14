@@ -31,7 +31,7 @@ endif
 ifeq ($(DEBUG),1)
 	CFLAGS += -O0 -DDEBUG $(PFLAG)
 else
-	CFLAGS += -O3 -DNDEBUG $(PFLAG) #-fdetach
+	CFLAGS += -O2 -DNDEBUG $(PFLAG) #-fdetach
 endif
 
 LDFLAGS= -Wall -lm -lrt -ldl -lpthread -lcilkrts
