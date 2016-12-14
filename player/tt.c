@@ -27,7 +27,7 @@ struct ttRec {
 
 
 // each set is a 4-way set-associative cache and contains 4 records
-#define RECORDS_PER_SET 1
+#define RECORDS_PER_SET 4
 typedef struct {
   ttRec_t records[RECORDS_PER_SET];
 } ttSet_t;
@@ -65,9 +65,8 @@ void tt_resize_hashtable(int size_in_meg) {
   // total number of sets we could have in the hashtable
   uint64_t num_of_sets = size_in_bytes / sizeof(ttSet_t);
 
-  uint64_t pow = 1;
   num_of_sets--;
-  while (pow <= num_of_sets) pow *= 2;
+  uint64_t pow = (1ULL) << (64 - __builtin_clzl(num_of_sets));
   num_of_sets = pow;
 
   hashtable.num_of_sets = num_of_sets;
@@ -168,13 +167,12 @@ ttRec_t *tt_hashtable_get(uint64_t key) {
   uint64_t set_index = key & hashtable.mask;
   ttRec_t *rec = hashtable.tt_set[set_index].records;
 
-  ttRec_t *found = NULL;
   for (int i = 0; i < RECORDS_PER_SET; i++, rec++) {
     if (rec->key == key) {  // found the record that we are looking for
-      found = rec;
+      return rec;
     }
   }
-  return found;
+  return NULL;
 }
 
 

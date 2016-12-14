@@ -131,7 +131,7 @@ square_t next_piece(position_t * p, square_t current, king_ori_t dir) {
         uint8_t bit_array = p->files[file];
         uint8_t bits_left = bit_array >> (rank + 1);
         if (bits_left == 0) {   // laser goes out of the board
-          return 0;
+          return 0;  
         } else {
           int trailing_zeros = __builtin_ctz(bits_left);
           return current + trailing_zeros + 1;      // location of next piece 
@@ -141,7 +141,7 @@ square_t next_piece(position_t * p, square_t current, king_ori_t dir) {
         uint8_t bit_array = p->files[file];
         uint8_t bits_left = bit_array << (8 - rank);
         if (bits_left == 0) {   // laser goes out of the board
-          return 0;
+          return 0; 
         } else {
           int leading_zeros = __builtin_clz(bits_left) - 24;    // __builtin_clz is for 32 bit unsigned int  
           tbassert(((file + FIL_ORIGIN) * ARR_WIDTH + RNK_ORIGIN + rank -
@@ -657,7 +657,6 @@ static inline square_t fire_laser(position_t * p, color_t c) {
 
   tbassert(ptype_of(p->board[sq]) == KING,
            "ptype: %d\n", ptype_of(p->board[sq]));
-  piece_t current_piece;
 
   while (true) {
     sq = next_piece(p, sq, bdir);
@@ -666,8 +665,8 @@ static inline square_t fire_laser(position_t * p, color_t c) {
       return 0;
     }
 
-    current_piece = ptype_of(p->board[sq]);
-    tbassert(current_piece == PAWN || current_piece == KING, "invalid piece");
+    piece_t current_piece = ptype_of(p->board[sq]);
+    tbassert(current_piece == PAWN || current_piece == KING, "invalid piece\n");
 
     if (current_piece == PAWN) {
       // int oldbdir = bdir;
@@ -764,7 +763,7 @@ void low_level_make_move(position_t * old, position_t * p, move_t mv) {
                     });
 
   *p = *old;
-
+  
   p->history = old;
   p->last_move = mv;
 

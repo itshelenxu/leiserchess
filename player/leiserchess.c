@@ -180,7 +180,8 @@ typedef struct {
 } entry_point_args;
 
 void *entry_point(void *arg) {
-  move_t subpv[MAX_PLY_IN_SEARCH];
+  //move_t subpv[MAX_PLY_IN_SEARCH];
+  move_t optimal_move;
 
   entry_point_args *real_arg = (entry_point_args *) arg;
   int depth = real_arg->depth;
@@ -200,11 +201,11 @@ void *entry_point(void *arg) {
   for (int d = 1; d <= depth; d++) {  // Iterative deepening
     reset_abort();
 
-    searchRoot(p, -INF, INF, d, 0, subpv, &node_count_serial,
+    searchRoot(p, -INF, INF, d, 0, &optimal_move, &node_count_serial,
                 OUT);
 
     et = elapsed_time();
-    bestMoveSoFar = subpv[0];
+    bestMoveSoFar = optimal_move;
 
     if (!should_abort()) {
       // print something?

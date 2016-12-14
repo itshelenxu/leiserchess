@@ -85,7 +85,7 @@ typedef enum {
 #define ORI_MASK (NUM_ORI - 1)
 
 typedef enum {
-  NN,
+  NN = 0,
   EE,
   SS,
   WW
